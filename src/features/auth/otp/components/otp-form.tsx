@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -16,8 +17,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { PinInput, PinInputField } from '@/components/pin-input'
+import { authClient } from '@/lib/auth-client'
+import { useAuthStore } from '@/stores/authStore'
+import { IconChevronRight } from '@tabler/icons-react'
 
-type OtpFormProps = HTMLAttributes<HTMLDivElement>
+type OtpFormProps = HTMLAttributes<HTMLDivElement> & {
+  phonenumber: string
+}
 
 const formSchema = z.object({
   otp: z.string().min(1, { message: 'Please enter your otp code.' }),
@@ -33,21 +39,60 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
     defaultValues: { otp: '' },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-          <code className='text-white'>{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
 
-    setTimeout(() => {
-      setIsLoading(false)
-      navigate({ to: '/' })
-    }, 1000)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    setIsLoading(true)
+
+    await authClient.phoneNumber.verify({
+      phoneNumber: props.phonenumber,
+      code: data.otp
+    },
+      {
+        onRequest: () => {
+          //show loading
+          setIsLoading(true)
+          console.log("phone number: ", props.phonenumber)
+        },
+        onSuccess: (ctx) => {
+
+          console.log("ctx-data", ctx.data)
+          try {
+            const sessionToken = ctx.data.token;
+            // const password = props.password;
+            // const userInfo = ctx.response.headers.get("user-info"); // Optionally get user data
+            // Store the token securely (e.g., in localStorage)
+            if (sessionToken) {
+              // Use authStore to manage token and user info
+              const authStore = useAuthStore.getState().auth;
+              authStore.setAccessToken(sessionToken);
+            }
+          } catch (error) {
+            alert(JSON.stringify(error));
+          }
+
+          toast({
+            title: 'Your phone number has been verified!',
+            description: (
+              <span>
+                Please, complete your profile before logging into your account.
+              </span>
+            ),
+          })
+          navigate({ to: '/complete-profile' })
+          setIsLoading(false)
+        },
+        onError: (ctx) => {
+          setIsLoading(false)
+          toast({
+            title: `${ctx.error.message}`,
+            description: (
+              <span>
+                Your phone number has not been verified!
+              </span>
+            ),
+          })
+        },
+      })
   }
 
   return (
@@ -86,6 +131,8 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
             />
             <Button className='mt-2' disabled={disabledBtn || isLoading}>
               Verify
+              <IconChevronRight />
+
             </Button>
           </div>
         </form>

@@ -12,18 +12,24 @@ export default function SignUp() {
             Create an account
           </h1>
           <p className='text-sm text-muted-foreground'>
-            Enter your email and password to create an account. <br />
-            Already have an account?{' '}
-            <Link
-              to='/sign-in'
-              className='underline underline-offset-4 hover:text-primary'
-            >
-              Sign In
-            </Link>
+            Enter your phone number to create an account. <br />
+
           </p>
         </div>
         <SignUpForm />
+
         <p className='mt-4 px-8 text-center text-sm text-muted-foreground'>
+          Already have an account?{' '}
+          <Link
+            to='/sign-in'
+            className='underline underline-offset-4 hover:text-primary'
+          >
+            Sign In
+          </Link>
+        </p>
+        
+      </Card>
+      <p className='mt-4 px-8 text-center text-xs text-muted-foreground'>
           By creating an account, you agree to our{' '}
           <a
             href='/terms'
@@ -40,7 +46,6 @@ export default function SignUp() {
           </a>
           .
         </p>
-      </Card>
     </AuthLayout>
   )
 }

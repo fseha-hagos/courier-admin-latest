@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios'
 import {
   QueryCache,
   QueryClient,
@@ -15,6 +15,8 @@ import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 
+axios.defaults.baseURL = 'http://localhost:3000'; // Replace with your API base URL
+axios.defaults.withCredentials = true; // Send cookies with every request
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
