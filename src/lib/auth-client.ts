@@ -3,11 +3,12 @@
 import { phoneNumberClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
 import { useAuthStore } from "@/stores/authStore"; // Import the authStore
+import { adminClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
     baseURL: "http://localhost:3000",
     plugins: [
-        phoneNumberClient()
+        phoneNumberClient(), adminClient()
     ],
     fetchOptions: {
         onSuccess: (ctx) => {

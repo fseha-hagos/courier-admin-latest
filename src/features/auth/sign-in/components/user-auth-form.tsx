@@ -18,6 +18,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { authClient } from '@/lib/auth-client'
+import { toast } from '@/hooks/use-toast'
+import { useAuthStore } from '@/stores/authStore'
 
 type UserAuthFormProps = HTMLAttributes<HTMLDivElement>
 
@@ -37,7 +39,7 @@ const formSchema = z.object({
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const navigate = useNavigate()
-  
+
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -63,14 +65,42 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           setIsLoading(true)
         },
         onSuccess: (ctx) => {
+          try {
+            const authStore = useAuthStore.getState().auth;
+            const sessionToken = ctx.data.token;
+            const user = ctx.data.user;
+            // const password = props.password;
+            // const userInfo = ctx.response.headers.get("user-info"); // Optionally get user data
+            // Store the token securely (e.g., in localStorage)
+            if (sessionToken) {
+              authStore.setAccessToken(sessionToken);
+            }
+            if (user) {
+              console.log("USER: ", user)
+              authStore.setUser(user);
+
+            }
+          } catch (error) {
+            alert(JSON.stringify(error));
+          }
           setIsLoading(false)
+
           navigate({ to: '/' })
-          console.log("ctx-data", ctx.data)
-          console.log("ctx-data", ctx.response)
+          console.log("HELOLOLOLLLLLLOOOOO")
+          // console.log("ctx-data", ctx.data)
+          // console.log("ctx-data", ctx.response)
         },
         onError: (ctx) => {
           setIsLoading(false)
-          alert(ctx.error.message);
+          toast({
+            variant: 'destructive',
+            title: 'Something went wrong!',
+            description: (
+              <span>
+                {ctx.error.message}
+              </span>
+            ),
+          })
         },
       })
   }
@@ -118,7 +148,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               Login
             </Button>
 
-           
+
           </div>
         </form>
       </Form>

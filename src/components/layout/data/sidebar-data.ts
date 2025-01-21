@@ -19,7 +19,7 @@ import {
   IconUserOff,
   IconUsers,
 } from '@tabler/icons-react'
-import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
+import { Command } from 'lucide-react'
 import { type SidebarData } from '../types'
 import { useAuthStore } from "@/stores/authStore"; // Import your authStore
 
@@ -29,26 +29,17 @@ export const getSidebarData = (): SidebarData => {
   const { user } = useAuthStore.getState().auth; // Dynamically fetch user data from the store
   return {
     user: {
-      name: user?.email.split("@")[0] || "Guest", // Derive username from email or fallback
-      email: user?.email || "guest@example.com",
-      avatar: "/avatars/default-avatar.jpg", // Default avatar if not set
+      name: user?.name || "Guest", // Derive username from phoneNumber or fallback
+      phoneNumber: user?.phoneNumber || "N/A",
+      image: "/avatars/default-avatar.jpg", // Default avatar if not set
+      role: "/avatars/default-avatar.jpg",
     },
     teams: [
       {
-        name: 'Shadcn Admin',
+        name: 'Delivery Admin',
         logo: Command,
-        plan: 'Vite + ShadcnUI',
-      },
-      {
-        name: 'Acme Inc',
-        logo: GalleryVerticalEnd,
-        plan: 'Enterprise',
-      },
-      {
-        name: 'Acme Corp.',
-        logo: AudioWaveform,
-        plan: 'Startup',
-      },
+        plan: 'Hello',
+      }
     ],
     navGroups: [
       {
@@ -192,7 +183,7 @@ export const getSidebarData = (): SidebarData => {
 // export const sidebarData: SidebarData = {
 //   user: {
 //     name: 'satnaing',
-//     email: 'satnaingdev@gmail.com',
+//     phoneNumber: 'satnaingdev@gmail.com',
 //     avatar: '/avatars/shadcn.jpg',
 //   },
 //   teams: [

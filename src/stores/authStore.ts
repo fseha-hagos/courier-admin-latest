@@ -3,11 +3,13 @@ import { create } from 'zustand'
 
 const ACCESS_TOKEN = 'thisisjustarandomstring'
 
-interface AuthUser {
-  accountNo: string
-  email: string
-  role: string[]
-  exp: number
+export interface AuthUser {
+  accountNo?: string
+  name: string
+  phoneNumber: string
+  image?: string
+  role?: string
+  exp?: number
 }
 
 interface AuthState {
