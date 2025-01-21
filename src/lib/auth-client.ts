@@ -4,11 +4,23 @@ import { phoneNumberClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
 import { useAuthStore } from "@/stores/authStore"; // Import the authStore
 import { adminClient } from "better-auth/client/plugins"
+import { inferAdditionalFields } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
     baseURL: "http://localhost:3000",
     plugins: [
-        phoneNumberClient(), adminClient()
+        phoneNumberClient(), 
+        adminClient(),
+        inferAdditionalFields({
+            user: {
+              vehicles: {
+                type: "string[]"
+              },
+              deliveries: {
+                type: "string[]"
+              }
+            }
+        })
     ],
     fetchOptions: {
         onSuccess: (ctx) => {
