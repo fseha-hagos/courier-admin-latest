@@ -10,15 +10,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useUsers } from '../context/users-context'
 import { User } from '../data/schema'
+import { useUsersStore } from '../data/usersStore'
 
 interface DataTableRowActionsProps {
   row: Row<User>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
-  const { setOpen, setCurrentRow } = useUsers()
+  const { setOpen, setCurrentRow } = useUsersStore()
   return (
     <>
       <DropdownMenu modal={false}>

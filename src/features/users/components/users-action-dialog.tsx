@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use client'
 
 import { z } from 'zod'
@@ -27,17 +28,16 @@ import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { userTypes } from '../data/data'
 import { User } from '../data/schema'
+import { authClient } from '@/lib/auth-client'
 
 const formSchema = z
   .object({
     firstName: z.string().min(1, { message: 'First Name is required.' }),
     lastName: z.string().min(1, { message: 'Last Name is required.' }),
-    username: z.string().min(1, { message: 'Username is required.' }),
     phoneNumber: z.string().min(1, { message: 'Phone number is required.' }),
     email: z
-      .string()
-      .min(1, { message: 'Email is required.' })
-      .email({ message: 'Email is invalid.' }),
+      .string(),
+      // .email({ message: 'Email is invalid.' }),
     password: z.string().transform((pwd) => pwd.trim()),
     role: z.string().min(1, { message: 'Role is required.' }),
     confirmPassword: z.string().transform((pwd) => pwd.trim()),
@@ -103,12 +103,13 @@ export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
           ...currentRow,
           password: '',
           confirmPassword: '',
+          role: '',
+          phoneNumber: '',
           isEdit,
         }
       : {
           firstName: '',
           lastName: '',
-          username: '',
           email: '',
           role: '',
           phoneNumber: '',
@@ -118,14 +119,27 @@ export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
         },
   })
 
-  const onSubmit = (values: UserForm) => {
+  const onSubmit = async (values: UserForm) => {
     form.reset()
+    const name = `${values.firstName} ${values.lastName}`
+    const newUser = await authClient.admin.createUser({
+      name,
+      email: values.email,
+      password: values.password,
+      role: values.role,
+      data: {
+        // any additional on the user table including plugin fields and custom fields
+        phoneNumber: values.phoneNumber,
+      }
+    });
+    console.log("New User: ",newUser)
     toast({
       title: 'You submitted the following values:',
       description: (
         <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-          <code className='text-white'>{JSON.stringify(values, null, 2)}</code>
+          <code className='text-white'>{JSON.stringify(newUser, null, 2)}</code>
         </pre>
+        // <span></span>
       ),
     })
     onOpenChange(false)
@@ -189,25 +203,6 @@ export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
                         placeholder='Doe'
                         className='col-span-4'
                         autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center gap-x-4 gap-y-1 space-y-0'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Username
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='john_doe'
-                        className='col-span-4'
                         {...field}
                       />
                     </FormControl>

@@ -69,26 +69,17 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             const authStore = useAuthStore.getState().auth;
             const sessionToken = ctx.data.token;
             const user = ctx.data.user;
-            // const password = props.password;
-            // const userInfo = ctx.response.headers.get("user-info"); // Optionally get user data
-            // Store the token securely (e.g., in localStorage)
             if (sessionToken) {
               authStore.setAccessToken(sessionToken);
             }
             if (user) {
-              console.log("USER: ", user)
               authStore.setUser(user);
-
             }
           } catch (error) {
             alert(JSON.stringify(error));
           }
           setIsLoading(false)
-
           navigate({ to: '/' })
-          console.log("HELOLOLOLLLLLLOOOOO")
-          // console.log("ctx-data", ctx.data)
-          // console.log("ctx-data", ctx.response)
         },
         onError: (ctx) => {
           setIsLoading(false)

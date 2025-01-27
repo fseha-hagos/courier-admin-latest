@@ -1,10 +1,11 @@
-import { useUsers } from '../context/users-context'
+import { useUsersStore } from '../data/usersStore'
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
 
 export function UsersDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow } = useUsers()
+  const { open, setOpen, currentRow, setCurrentRow } = useUsersStore()
+  
   return (
     <>
       <UsersActionDialog

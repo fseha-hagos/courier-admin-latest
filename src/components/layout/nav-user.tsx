@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouter } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import {
   BadgeCheck,
   Bell,
@@ -21,17 +21,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { AuthUser, useAuthStore } from '@/stores/authStore'
-import { authClient } from '@/lib/auth-client'
+import { AuthUser } from '@/stores/authStore'
 import { logout } from '@/lib/utils'
 interface NavUserProps {
   user: AuthUser;
 }
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
-  const navigate = useNavigate()
   const router = useRouter()
-  const authStore = useAuthStore.getState
   return (
     <SidebarMenu>
       <SidebarMenuItem>

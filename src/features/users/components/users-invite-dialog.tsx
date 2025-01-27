@@ -27,10 +27,9 @@ import { SelectDropdown } from '@/components/select-dropdown'
 import { userTypes } from '../data/data'
 
 const formSchema = z.object({
-  email: z
+  phoneNumber: z
     .string()
-    .min(1, { message: 'Email is required.' })
-    .email({ message: 'Email is invalid.' }),
+    .min(1, { message: 'Phone number is required.' }),
   role: z.string().min(1, { message: 'Role is required.' }),
   desc: z.string().optional(),
 })
@@ -44,7 +43,7 @@ interface Props {
 export function UsersInviteDialog({ open, onOpenChange }: Props) {
   const form = useForm<UserInviteForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', role: '', desc: '' },
+    defaultValues: { phoneNumber: '', role: '', desc: '' },
   })
 
   const onSubmit = (values: UserInviteForm) => {
@@ -74,7 +73,7 @@ export function UsersInviteDialog({ open, onOpenChange }: Props) {
             <IconMailPlus /> Invite User
           </DialogTitle>
           <DialogDescription>
-            Invite new user to join your team by sending them an email
+            Invite new user to join your team by sending them a message with an
             invitation. Assign a role to define their access level.
           </DialogDescription>
         </DialogHeader>
@@ -86,14 +85,14 @@ export function UsersInviteDialog({ open, onOpenChange }: Props) {
           >
             <FormField
               control={form.control}
-              name='email'
+              name='phoneNumber'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Phone number</FormLabel>
                   <FormControl>
                     <Input
-                      type='email'
-                      placeholder='eg: john.doe@gmail.com'
+                      type='text'
+                      placeholder='eg: +251 912 345 678'
                       {...field}
                     />
                   </FormControl>

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_authenticated')({
   component: RouteComponent,
   beforeLoad: async ({ location }) => {
     const {auth} = useAuthStore.getState(); // Access the state directly
-    if (auth.accessToken == "") {
+    if (auth.accessToken == "" || !auth.user || auth.user == null) {
       throw redirect({
         to: '/sign-in',
         search: {
