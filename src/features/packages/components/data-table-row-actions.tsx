@@ -15,9 +15,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useTasks } from '../context/tasks-context'
-import { labels } from '../data/data'
-import { taskSchema } from '../data/schema'
+import { usePackagesStore } from '../data/packagesStore'  // Import the store
+import { Package } from '../data/schema'
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
@@ -26,9 +25,9 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const task = taskSchema.parse(row.original)
+  const packageData = row.original as Package  // Type casting based on the current row data
 
-  const { setOpen, setCurrentRow } = useTasks()
+  const { setOpen, setCurrentRow } = usePackagesStore()  // Using packagesStore for state management
 
   return (
     <DropdownMenu modal={false}>
@@ -44,7 +43,7 @@ export function DataTableRowActions<TData>({
       <DropdownMenuContent align='end' className='w-[160px]'>
         <DropdownMenuItem
           onClick={() => {
-            setCurrentRow(task)
+            setCurrentRow(packageData)  // Using setCurrentRow to set the current package
             setOpen('update')
           }}
         >
@@ -56,9 +55,9 @@ export function DataTableRowActions<TData>({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={task.label}>
-              {labels.map((label) => (
-                <DropdownMenuRadioItem key={label.value} value={label.value}>
+            <DropdownMenuRadioGroup value={packageData.labels?.[0]?.id}>
+              {packageData.labels?.map((label) => (
+                <DropdownMenuRadioItem key={label.id} value={label.id}>
                   {label.label}
                 </DropdownMenuRadioItem>
               ))}
@@ -68,7 +67,7 @@ export function DataTableRowActions<TData>({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
-            setCurrentRow(task)
+            setCurrentRow(packageData)  // Using setCurrentRow to set the current package for deletion
             setOpen('delete')
           }}
         >

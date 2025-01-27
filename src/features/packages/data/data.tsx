@@ -1,71 +1,47 @@
 import {
-  IconArrowDown,
-  IconArrowRight,
-  IconArrowUp,
-  IconCircle,
+  IconExclamationCircle,
+  // IconCircle,
+  IconStopwatch,
   IconCircleCheck,
   IconCircleX,
-  IconExclamationCircle,
-  IconStopwatch,
 } from '@tabler/icons-react'
 
+// Define the possible package types (labels)
 export const labels = [
   {
-    value: 'bug',
-    label: 'Bug',
+    value: 'fragile',
+    label: 'Fragile',
   },
   {
-    value: 'feature',
-    label: 'Feature',
+    value: 'urgent',
+    label: 'Urgent',
   },
   {
-    value: 'documentation',
-    label: 'Documentation',
+    value: 'standard',
+    label: 'Standard',
   },
 ]
 
+// Define package statuses based on your Prisma schema
 export const statuses = [
   {
-    value: 'backlog',
-    label: 'Backlog',
+    value: 'pending',
+    label: 'Pending',
     icon: IconExclamationCircle,
   },
   {
-    value: 'todo',
-    label: 'Todo',
-    icon: IconCircle,
-  },
-  {
-    value: 'in progress',
-    label: 'In Progress',
+    value: 'in_transit',
+    label: 'In Transit',
     icon: IconStopwatch,
   },
   {
-    value: 'done',
-    label: 'Done',
+    value: 'delivered',
+    label: 'Delivered',
     icon: IconCircleCheck,
   },
   {
     value: 'canceled',
     label: 'Canceled',
     icon: IconCircleX,
-  },
-]
-
-export const priorities = [
-  {
-    label: 'Low',
-    value: 'low',
-    icon: IconArrowDown,
-  },
-  {
-    label: 'Medium',
-    value: 'medium',
-    icon: IconArrowRight,
-  },
-  {
-    label: 'High',
-    value: 'high',
-    icon: IconArrowUp,
   },
 ]

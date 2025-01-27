@@ -69,6 +69,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             const authStore = useAuthStore.getState().auth;
             const sessionToken = ctx.data.token;
             const user = ctx.data.user;
+            console.log("Login user: ", user);
             if (sessionToken) {
               authStore.setAccessToken(sessionToken);
             }

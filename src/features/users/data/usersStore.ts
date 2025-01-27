@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 import { create } from 'zustand'
 import { User } from './schema'
-import { authClient } from '@/lib/auth-client'
+import axios from 'axios';  // Import Axios
+
 
 type UsersDialogType = 'invite' | 'add' | 'edit' | 'delete'
 
@@ -22,28 +23,15 @@ export const useUsersStore = create<UsersState>((set) => ({
   loading: false,
   fetchUsers: async () => {
     try {
-      set({ loading: true })
-      await authClient.admin.listUsers({
-        query: {
-          limit: 10,
-        },
-        fetchOptions: {
-          onSuccess: (data) => {
-            console.log('data', data.data.users)
-            const users: User[] = data.data.users
-            if (data.data && data.data.users) {
-              set({ users })
-            }
-          },
-          onError: (error) => {
-            console.log('error', error)
-          }
-        }
-      });
-      set({ loading: false })
+      set({ loading: true });
+
+      // Make an API call using Axios
+      const { data } = await axios.get('/api/users');
+      console.log("USERSSSSS: ", data.users)
+      set({ users: data.users, loading: false });
     } catch (error) {
-      console.error('Error fetching users:', error);
-      set({ users: [] }); // Default to empty array on error
+      console.error("Error fetching users:", error);
+      set({ users: [], loading: false }); // Default to an empty array on error
     }
   },
   setUsers: (users: User[] | null) => {

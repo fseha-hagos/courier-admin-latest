@@ -15,6 +15,7 @@ const userSchema = z.object({
   email: z.string().optional(),
   phoneNumber: z.string().optional().nullable(),
   role: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
   banned: z.boolean().optional().nullable(),
   banReason: z.string().optional().nullable(),
   banExpires: z.coerce.date().optional().nullable(),

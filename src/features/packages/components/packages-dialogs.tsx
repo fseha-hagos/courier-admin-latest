@@ -1,29 +1,29 @@
 import { toast } from '@/hooks/use-toast'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { useTasks } from '../context/tasks-context'
-import { TasksImportDialog } from './tasks-import-dialog'
-import { TasksMutateDrawer } from './tasks-mutate-drawer'
+import { PackagesImportDialog } from './packages-import-dialog' // Replace with package-specific import
+import { PackagesMutateDrawer } from './packages-mutate-drawer' // Replace with package-specific drawer
+import { usePackagesStore } from '../data/packagesStore'
 
-export function TasksDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow } = useTasks()
+export function PackagesDialogs() {
+  const { open, setOpen, currentRow, setCurrentRow } = usePackagesStore() // Adjusted to use the packages store
   return (
     <>
-      <TasksMutateDrawer
-        key='task-create'
+      <PackagesMutateDrawer
+        key='package-create'
         open={open === 'create'}
         onOpenChange={() => setOpen('create')}
       />
 
-      <TasksImportDialog
-        key='tasks-import'
+      <PackagesImportDialog
+        key='packages-import'
         open={open === 'import'}
         onOpenChange={() => setOpen('import')}
       />
 
       {currentRow && (
         <>
-          <TasksMutateDrawer
-            key={`task-update-${currentRow.id}`}
+          <PackagesMutateDrawer
+            key={`package-update-${currentRow.id}`}
             open={open === 'update'}
             onOpenChange={() => {
               setOpen('update')
@@ -35,7 +35,7 @@ export function TasksDialogs() {
           />
 
           <ConfirmDialog
-            key='task-delete'
+            key='package-delete'
             destructive
             open={open === 'delete'}
             onOpenChange={() => {
@@ -50,7 +50,7 @@ export function TasksDialogs() {
                 setCurrentRow(null)
               }, 500)
               toast({
-                title: 'The following task has been deleted:',
+                title: 'The following package has been deleted:',
                 description: (
                   <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
                     <code className='text-white'>
@@ -61,10 +61,10 @@ export function TasksDialogs() {
               })
             }}
             className='max-w-md'
-            title={`Delete this task: ${currentRow.id} ?`}
+            title={`Delete this package: ${currentRow.id} ?`}
             desc={
               <>
-                You are about to delete a task with the ID{' '}
+                You are about to delete a package with the ID{' '}
                 <strong>{currentRow.id}</strong>. <br />
                 This action cannot be undone.
               </>

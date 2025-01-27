@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-console */
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -9,14 +7,9 @@ import { columns } from './components/users-columns'
 import { UsersDialogs } from './components/users-dialogs'
 import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersTable } from './components/users-table'
-// import { useEffect, useState } from 'react'
-// import { authClient } from '@/lib/auth-client'
-import { useUsersStore } from './data/usersStore'
 
 export default function Users() {
-  const loading = useUsersStore((state)=> state.loading)
   return (
-    // <UsersProvider>
     <>
       <Header fixed>
         <Search />
@@ -43,6 +36,5 @@ export default function Users() {
 
       <UsersDialogs />
     </>
-    // </UsersProvider>
   )
 }
