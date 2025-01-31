@@ -27,7 +27,7 @@ export const useUsersStore = create<UsersState>((set) => ({
 
       // Make an API call using Axios
       const { data } = await axios.get('/api/users');
-      console.log("USERSSSSS: ", data.users)
+      // console.log("USERSSSSS: ", data.users)
       set({ users: data.users, loading: false });
     } catch (error) {
       console.error("Error fetching users:", error);

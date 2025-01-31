@@ -1,6 +1,7 @@
 import { IconDownload, IconPlus } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { usePackagesStore } from '../data/packagesStore'
+import { Link } from '@tanstack/react-router'
 
 export function PackagesPrimaryButtons() {
   const { setOpen } = usePackagesStore()
@@ -13,8 +14,11 @@ export function PackagesPrimaryButtons() {
       >
         <span>Import</span> <IconDownload size={18} />
       </Button>
-      <Button className='space-x-1' onClick={() => setOpen('create')}>
-        <span>Create</span> <IconPlus size={18} />
+      <Button className='space-x-1' asChild>
+        <Link to='/packages/create'>
+          Create
+          <IconPlus />
+        </Link>
       </Button>
     </div>
   )

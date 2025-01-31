@@ -65,6 +65,9 @@ const AuthenticatedSettingsAppearanceLazyImport = createFileRoute(
 const AuthenticatedSettingsAccountLazyImport = createFileRoute(
   '/_authenticated/settings/account',
 )()
+const AuthenticatedPackagesCreateLazyImport = createFileRoute(
+  '/_authenticated/packages/create',
+)()
 
 // Create/Update Routes
 
@@ -279,6 +282,15 @@ const AuthenticatedSettingsAccountLazyRoute =
     ),
   )
 
+const AuthenticatedPackagesCreateLazyRoute =
+  AuthenticatedPackagesCreateLazyImport.update({
+    id: '/packages/create',
+    path: '/packages/create',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/packages/create.lazy').then((d) => d.Route),
+  )
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/packages/create': {
+      id: '/_authenticated/packages/create'
+      path: '/packages/create'
+      fullPath: '/packages/create'
+      preLoaderRoute: typeof AuthenticatedPackagesCreateLazyImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/settings/account': {
       id: '/_authenticated/settings/account'
       path: '/account'
@@ -492,6 +511,7 @@ const AuthenticatedSettingsRouteLazyRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedPackagesCreateLazyRoute: typeof AuthenticatedPackagesCreateLazyRoute
   AuthenticatedAppsIndexLazyRoute: typeof AuthenticatedAppsIndexLazyRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
   AuthenticatedHelpCenterIndexLazyRoute: typeof AuthenticatedHelpCenterIndexLazyRoute
@@ -503,6 +523,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteLazyRoute:
     AuthenticatedSettingsRouteLazyRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedPackagesCreateLazyRoute: AuthenticatedPackagesCreateLazyRoute,
   AuthenticatedAppsIndexLazyRoute: AuthenticatedAppsIndexLazyRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
   AuthenticatedHelpCenterIndexLazyRoute: AuthenticatedHelpCenterIndexLazyRoute,
@@ -528,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
+  '/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -553,6 +575,7 @@ export interface FileRoutesByTo {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
+  '/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -582,6 +605,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500LazyRoute
   '/(errors)/503': typeof errors503LazyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayLazyRoute
@@ -611,6 +635,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/packages/create'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -635,6 +660,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/packages/create'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -662,6 +688,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/packages/create'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -737,6 +764,7 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated/settings",
         "/_authenticated/",
+        "/_authenticated/packages/create",
         "/_authenticated/apps/",
         "/_authenticated/chats/",
         "/_authenticated/help-center/",
@@ -793,6 +821,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/": {
       "filePath": "_authenticated/index.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/packages/create": {
+      "filePath": "_authenticated/packages/create.lazy.tsx",
       "parent": "/_authenticated"
     },
     "/_authenticated/settings/account": {

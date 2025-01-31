@@ -122,6 +122,31 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+  .custom-scrollbar {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: hsl(var(--muted-foreground)) transparent; /* Thumb and track colors */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Make scrollbar a bit thinner */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground)); /* Thumb color */
+    border-radius: 10px; /* Rounded corners */
+    border: 2px solid transparent; /* Add space around thumb */
+    background-clip: padding-box; /* Prevents thumb color bleeding */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent; /* Transparent track for a cleaner look */
+  }
+
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(
+      var(--foreground)
+    ); /* Change color on hover for visibility */
+  }
 
   .faded-bottom {
     @apply after:pointer-events-none after:absolute after:bottom-0 after:left-0 after:hidden after:h-32 after:w-full after:bg-[linear-gradient(180deg,_transparent_10%,_hsl(var(--background))_70%)] after:md:block;
