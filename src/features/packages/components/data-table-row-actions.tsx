@@ -1,81 +1,156 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { Row } from '@tanstack/react-table'
-import { IconTrash } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { usePackagesStore } from '../data/packagesStore'  // Import the store
-import { Package } from '../data/schema'
+import { Package } from '../types'
+import { usePackagesStore, PackagesDialogType } from '../data/packagesStore'
+import { Loader2, Trash2, History } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from '@/hooks/use-toast'
+import packagesApi from '../data/packagesApi'
+import { useQueryClient } from '@tanstack/react-query'
+import { AxiosError } from 'axios'
 
-interface DataTableRowActionsProps<TData> {
-  row: Row<TData>
+interface DataTableRowActionsProps {
+  row: Row<Package>
 }
 
-export function DataTableRowActions<TData>({
-  row,
-}: DataTableRowActionsProps<TData>) {
-  const packageData = row.original as Package  // Type casting based on the current row data
+export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(false)
+  const { setOpen, setCurrentRow } = usePackagesStore()
+  const queryClient = useQueryClient()
 
-  const { setOpen, setCurrentRow } = usePackagesStore()  // Using packagesStore for state management
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+      const response = await packagesApi.delete(row.original.id)
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message || 'Package deleted successfully'
+        })
+        queryClient.invalidateQueries({ queryKey: ['packages'] })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.error || 'Failed to delete package'
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error || error.message
+        : 'Failed to delete package'
+      
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleRestore = async () => {
+    try {
+      setIsRestoring(true)
+      const response = await packagesApi.restore(row.original.id)
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: response.message || 'Package restored successfully'
+        })
+        queryClient.invalidateQueries({ queryKey: ['packages'] })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.error || 'Failed to restore package'
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof AxiosError 
+        ? error.response?.data?.error || error.message
+        : 'Failed to restore package'
+      
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage
+      })
+    } finally {
+      setIsRestoring(false)
+    }
+  }
+
+  const isInActiveDelivery = row.original.delivery?.status === 'IN_PROGRESS'
+  const isDeleted = row.original.deleted
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant='ghost'
-          className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
+          variant="ghost"
+          className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
         >
-          <DotsHorizontalIcon className='h-4 w-4' />
-          <span className='sr-only'>Open menu</span>
+          <DotsHorizontalIcon className="h-4 w-4" />
+          <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[160px]'>
+      <DropdownMenuContent align="end" className="w-[160px]">
         <DropdownMenuItem
           onClick={() => {
-            setCurrentRow(packageData)  // Using setCurrentRow to set the current package
-            setOpen('update')
+            setCurrentRow({
+              ...row.original,
+              delivery: row.original.delivery ? {
+                id: row.original.delivery.id,
+                status: row.original.delivery.status,
+                createdAt: new Date()
+              } : undefined
+            })
+            setOpen('update' as PackagesDialogType)
           }}
         >
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>Make a copy</DropdownMenuItem>
-        <DropdownMenuItem disabled>Favorite</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={packageData.labels?.[0]?.id}>
-              {packageData.labels?.map((label) => (
-                <DropdownMenuRadioItem key={label.id} value={label.id}>
-                  {label.label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(packageData)  // Using setCurrentRow to set the current package for deletion
-            setOpen('delete')
-          }}
-        >
-          Delete
-          <DropdownMenuShortcut>
-            <IconTrash size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        {isDeleted ? (
+          <DropdownMenuItem
+            onClick={handleRestore}
+            disabled={isRestoring || isInActiveDelivery}
+            className="text-green-600 focus:text-green-600 focus:bg-green-50"
+          >
+            {isRestoring ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <History className="mr-2 h-4 w-4" />
+            )}
+            {isRestoring ? 'Restoring...' : 'Restore'}
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem
+            onClick={handleDelete}
+            disabled={isDeleting || isInActiveDelivery}
+            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+          >
+            {isDeleting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-2 h-4 w-4" />
+            )}
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { PaginationResponse, Package, DeliveryStatus } from '../types'
+import type { PaginationResponse, Package, DeliveryStatus, PackageResponse } from '../types'
 
 interface CreatePackageData {
   customerId: string;
@@ -25,15 +25,16 @@ interface CreatePackageData {
   }[];
 }
 
-interface PackageResponse {
-  success: boolean;
-  package: Package;
-}
-
 interface PackagesResponse {
   success: boolean;
   packages: Package[];
   pagination: PaginationResponse;
+}
+
+interface DeletedPackagesResponse {
+  success: boolean;
+  packages: Package[];
+  count: number;
 }
 
 const api = axios.create({
@@ -52,6 +53,11 @@ const packagesApi = {
     return response.data
   },
 
+  getDeleted: async (): Promise<DeletedPackagesResponse> => {
+    const response = await api.get('/packages/deleted')
+    return response.data
+  },
+
   getById: async (id: string): Promise<PackageResponse> => {
     const response = await api.get(`/packages/${id}`)
     return response.data
@@ -67,12 +73,17 @@ const packagesApi = {
     return response.data
   },
 
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+  delete: async (id: string): Promise<PackageResponse> => {
     const response = await api.delete(`/packages/${id}`)
     return response.data
   },
 
-  assign: async (packageId: string, deliveryPersonId: string, vehicleId: string) => {
+  restore: async (id: string): Promise<PackageResponse> => {
+    const response = await api.post(`/packages/${id}/restore`)
+    return response.data
+  },
+
+  assign: async (packageId: string, deliveryPersonId: string, vehicleId: string): Promise<PackageResponse> => {
     const response = await api.post(`/packages/assign/${packageId}`, {
       deliveryPersonId,
       vehicleId

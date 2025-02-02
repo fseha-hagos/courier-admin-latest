@@ -49,6 +49,8 @@ export interface Package {
   deliveryLocationId: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?: Date | null;
+  deleted: boolean;
   pickupLocation: Location;
   deliveryLocation: Location;
   delivery?: {
@@ -60,6 +62,25 @@ export interface Package {
   };
   labels: PackageLabel[];
   locationHistory: LocationHistory[];
+}
+
+export interface PackageResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  package: Package;
+}
+
+export interface PackagesResponse {
+  success: boolean;
+  error?: string;
+  packages: Package[];
+  pagination: {
+    total: number;
+    pages: number;
+    currentPage: number;
+    limit: number;
+  };
 }
 
 export interface PaginationResponse {
