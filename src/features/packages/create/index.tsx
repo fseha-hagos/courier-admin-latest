@@ -6,10 +6,16 @@ import { ThemeSwitch } from "@/components/theme-switch"
 import { ProfileDropdown } from "@/components/profile-dropdown"
 import { Search } from "@/components/search"
 import { CreatePackagePrimaryButtons } from "./components/create-package-primary-buttons"
+import { useState, useCallback } from "react"
 
 export default function CreatePackage() {
-  return (
+  const [clearTrigger, setClearTrigger] = useState(0);
 
+  const handleClear = useCallback(() => {
+    setClearTrigger(prev => prev + 1);
+  }, []);
+
+  return (
     <>
       <Header fixed>
         <Search />
@@ -20,18 +26,13 @@ export default function CreatePackage() {
       </Header>
 
       <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2 flex-wrap gap-x-4'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>New Package</h2>
-            <p className='text-muted-foreground'>
-              Create a new package 
-            </p>
-          </div>
-          <CreatePackagePrimaryButtons />
+        <div className='flex items-center justify-between mb-4'>
+          <h2 className='text-lg font-semibold tracking-tight'>New Package</h2>
+          <CreatePackagePrimaryButtons onClear={handleClear} />
         </div>
         <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
           <MapLoader>
-            <CreatePackageComponent />
+            <CreatePackageComponent onClearAll={() => {}} clearTrigger={clearTrigger} />
           </MapLoader>
         </div>
       </Main>

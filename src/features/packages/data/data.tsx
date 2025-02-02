@@ -20,6 +20,30 @@ export const labels = [
     value: 'standard',
     label: 'Standard',
   },
+  {
+    value: 'perishable',
+    label: 'Perishable',
+  },
+  {
+    value: 'electronics',
+    label: 'Electronics',
+  },
+  {
+    value: 'documents',
+    label: 'Documents',
+  },
+  {
+    value: 'heavy',
+    label: 'Heavy',
+  },
+  {
+    value: 'liquid',
+    label: 'Liquid',
+  },
+  {
+    value: 'temperature_sensitive',
+    label: 'Temperature Sensitive',
+  },
 ]
 
 // Define package statuses based on your Prisma schema

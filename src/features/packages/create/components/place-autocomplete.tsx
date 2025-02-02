@@ -17,9 +17,10 @@ interface PlaceAutocompleteProps {
     east: number
     west: number
   }
+  value?: string
 }
 
-export function PlaceAutocomplete({ onPlaceSelect, placeholder, bounds }: PlaceAutocompleteProps) {
+export function PlaceAutocomplete({ onPlaceSelect, placeholder, bounds, value = "" }: PlaceAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
 
@@ -53,6 +54,20 @@ export function PlaceAutocomplete({ onPlaceSelect, placeholder, bounds }: PlaceA
     }
   }, [onPlaceSelect, bounds])
 
-  return <Input ref={inputRef} type="text" placeholder={placeholder} />
+  // Update input value when controlled value changes
+  useEffect(() => {
+    if (inputRef.current && value !== undefined) {
+      inputRef.current.value = value
+    }
+  }, [value])
+
+  return (
+    <Input
+      ref={inputRef}
+      type="text"
+      placeholder={placeholder}
+      className="w-full"
+    />
+  )
 }
 
