@@ -37,7 +37,9 @@ export function DataTable<TData>({
   onShowDeletedChange
 }: DataTableProps<TData>) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    deleted: false
+  })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     {
       id: 'deleted',

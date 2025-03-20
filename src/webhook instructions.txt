@@ -1,0 +1,155 @@
+Here's a clear explanation of WebSocket usage in the courier project:
+// WebSocket Events Guide for Frontend Team
+
+/*
+1. PACKAGE STATUS UPDATES
+-----------------------
+The backend emits real-time updates whenever a package's status changes.
+Event name: 'package:update'
+
+Example subscription:
+*/
+socket.on('package:update', (data: {
+  packageId: string;
+  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  timestamp: Date;
+  // May include additional data like deliveryPerson, location, etc.
+}) => {
+  // Update your UI with the new status
+});
+
+/*
+2. LOCATION UPDATES
+-----------------
+When a delivery person's location changes, the backend emits an update.
+Event name: 'location:update'
+
+Example subscription:
+*/
+socket.on('location:update', (data: {
+  deliveryPersonId: string;
+  packageId: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  timestamp: Date;
+}) => {
+  // Update delivery person's location on map
+  // Update ETA calculations
+});
+
+/*
+3. CONNECTING TO WEBSOCKET
+------------------------
+The WebSocket connection should be established when your app initializes.
+*/
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000', {
+  auth: {
+    token: 'your-auth-token' // Same token used for REST API
+  }
+});
+
+// Handle connection
+socket.on('connect', () => {
+  console.log('Connected to WebSocket');
+});
+
+// Handle disconnection
+socket.on('disconnect', () => {
+  console.log('Disconnected from WebSocket');
+  // Implement reconnection logic if needed
+});
+
+/*
+4. IMPORTANT NOTES
+----------------
+- The WebSocket connection requires authentication
+- Events are package-specific, so you'll receive updates only for relevant packages
+- Location updates are sent approximately every 30 seconds or when significant changes occur
+- All timestamps are in UTC
+- The connection will automatically attempt to reconnect if lost
+
+5. ERROR HANDLING
+---------------
+*/
+socket.on('connect_error', (error) => {
+  console.error('WebSocket connection error:', error);
+  // Handle connection errors (show offline status, retry connection, etc.)
+});
+
+/*
+6. CLEANUP
+---------
+When component unmounts or user logs out:
+*/
+useEffect(() => {
+  // Setup socket listeners
+
+  return () => {
+    socket.off('package:update');
+    socket.off('location:update');
+    // Remove other listeners
+  };
+}, []);
+
+/*
+7. EXAMPLE USAGE IN A REACT COMPONENT
+----------------------------------
+*/
+function PackageTracker({ packageId }: { packageId: string }) {
+  const [packageStatus, setPackageStatus] = useState<PackageStatus>();
+  const [deliveryLocation, setDeliveryLocation] = useState<Location>();
+
+  useEffect(() => {
+    // Listen for status updates
+    socket.on('package:update', (data) => {
+      if (data.packageId === packageId) {
+        setPackageStatus(data.status);
+      }
+    });
+
+    // Listen for location updates
+    socket.on('location:update', (data) => {
+      if (data.packageId === packageId) {
+        setDeliveryLocation(data.location);
+      }
+    });
+
+    return () => {
+      socket.off('package:update');
+      socket.off('location:update');
+    };
+  }, [packageId]);
+
+  return (
+    <div>
+      <PackageStatus status={packageStatus} />
+      <DeliveryMap location={deliveryLocation} />
+    </div>
+  );
+}
+
+/*
+8. AVAILABLE EVENTS
+-----------------
+Currently implemented WebSocket events:
+
+- 'package:update'     - Package status changes
+- 'location:update'    - Delivery person location updates
+- 'package:cancelled'  - Package cancellation
+- 'delivery:assigned'  - New delivery assignment
+- 'delivery:started'   - Delivery journey started
+- 'delivery:completed' - Delivery completed
+*/   This is the actual implementation in the project. The WebSocket server is already set up and running, and these events are being emitted by the backend. You can rely on these events for real-time updates in your frontend components.
+The most important events for package tracking are:
+package:update - For status changes
+location:update - For delivery person location
+Each event includes a timestamp and relevant data, allowing you to maintain an accurate, real-time view of delivery progress.
+Remember to:
+Handle connection errors gracefully
+Clean up listeners when components unmount
+Use the same authentication token as your REST API calls
+Consider implementing a reconnection strategy for dropped connections here's one that was just emitted Emitting package update for 9d5639ec-df5d-4ce1-b0f2-907a23310e9b: { status: 'ASSIGNED', timestamp: 2025-03-19T07:45:25.819Z }

@@ -19,7 +19,6 @@ import { Route as authSignInImport } from './routes/(auth)/sign-in'
 import { Route as authOtpImport } from './routes/(auth)/otp'
 import { Route as authCompleteProfileImport } from './routes/(auth)/complete-profile'
 import { Route as auth500Import } from './routes/(auth)/500'
-import { Route as AuthenticatedPackagesIdImport } from './routes/_authenticated/packages/$id'
 
 // Create Virtual Routes
 
@@ -48,6 +47,9 @@ const AuthenticatedPackagesIndexLazyImport = createFileRoute(
 const AuthenticatedHelpCenterIndexLazyImport = createFileRoute(
   '/_authenticated/help-center/',
 )()
+const AuthenticatedDeliveryPersonsIndexLazyImport = createFileRoute(
+  '/_authenticated/delivery-persons/',
+)()
 const AuthenticatedChatsIndexLazyImport = createFileRoute(
   '/_authenticated/chats/',
 )()
@@ -68,6 +70,18 @@ const AuthenticatedSettingsAccountLazyImport = createFileRoute(
 )()
 const AuthenticatedPackagesCreateLazyImport = createFileRoute(
   '/_authenticated/packages/create',
+)()
+const AuthenticatedPackagesIdLazyImport = createFileRoute(
+  '/_authenticated/packages/$id',
+)()
+const AuthenticatedDeliveryPersonsCreateLazyImport = createFileRoute(
+  '/_authenticated/delivery-persons/create',
+)()
+const AuthenticatedDeliveryPersonsIdIndexLazyImport = createFileRoute(
+  '/_authenticated/delivery-persons/$id/',
+)()
+const AuthenticatedDeliveryPersonsIdEditLazyImport = createFileRoute(
+  '/_authenticated/delivery-persons/$id/edit',
 )()
 
 // Create/Update Routes
@@ -220,6 +234,17 @@ const AuthenticatedHelpCenterIndexLazyRoute =
     ),
   )
 
+const AuthenticatedDeliveryPersonsIndexLazyRoute =
+  AuthenticatedDeliveryPersonsIndexLazyImport.update({
+    id: '/delivery-persons/',
+    path: '/delivery-persons/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/delivery-persons/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 const AuthenticatedChatsIndexLazyRoute =
   AuthenticatedChatsIndexLazyImport.update({
     id: '/chats/',
@@ -292,13 +317,47 @@ const AuthenticatedPackagesCreateLazyRoute =
     import('./routes/_authenticated/packages/create.lazy').then((d) => d.Route),
   )
 
-const AuthenticatedPackagesIdRoute = AuthenticatedPackagesIdImport.update({
-  id: '/packages/$id',
-  path: '/packages/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_authenticated/packages/$id.lazy').then((d) => d.Route),
-)
+const AuthenticatedPackagesIdLazyRoute =
+  AuthenticatedPackagesIdLazyImport.update({
+    id: '/packages/$id',
+    path: '/packages/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/packages/$id.lazy').then((d) => d.Route),
+  )
+
+const AuthenticatedDeliveryPersonsCreateLazyRoute =
+  AuthenticatedDeliveryPersonsCreateLazyImport.update({
+    id: '/delivery-persons/create',
+    path: '/delivery-persons/create',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/delivery-persons/create.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
+const AuthenticatedDeliveryPersonsIdIndexLazyRoute =
+  AuthenticatedDeliveryPersonsIdIndexLazyImport.update({
+    id: '/delivery-persons/$id/',
+    path: '/delivery-persons/$id/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/delivery-persons/$id/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
+const AuthenticatedDeliveryPersonsIdEditLazyRoute =
+  AuthenticatedDeliveryPersonsIdEditLazyImport.update({
+    id: '/delivery-persons/$id/edit',
+    path: '/delivery-persons/$id/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/delivery-persons/$id/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 // Populate the FileRoutesByPath interface
 
@@ -409,11 +468,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/delivery-persons/create': {
+      id: '/_authenticated/delivery-persons/create'
+      path: '/delivery-persons/create'
+      fullPath: '/delivery-persons/create'
+      preLoaderRoute: typeof AuthenticatedDeliveryPersonsCreateLazyImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/packages/$id': {
       id: '/_authenticated/packages/$id'
       path: '/packages/$id'
       fullPath: '/packages/$id'
-      preLoaderRoute: typeof AuthenticatedPackagesIdImport
+      preLoaderRoute: typeof AuthenticatedPackagesIdLazyImport
       parentRoute: typeof AuthenticatedRouteImport
     }
     '/_authenticated/packages/create': {
@@ -465,6 +531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatsIndexLazyImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/delivery-persons/': {
+      id: '/_authenticated/delivery-persons/'
+      path: '/delivery-persons'
+      fullPath: '/delivery-persons'
+      preLoaderRoute: typeof AuthenticatedDeliveryPersonsIndexLazyImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -491,6 +564,20 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersIndexLazyImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/delivery-persons/$id/edit': {
+      id: '/_authenticated/delivery-persons/$id/edit'
+      path: '/delivery-persons/$id/edit'
+      fullPath: '/delivery-persons/$id/edit'
+      preLoaderRoute: typeof AuthenticatedDeliveryPersonsIdEditLazyImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/delivery-persons/$id/': {
+      id: '/_authenticated/delivery-persons/$id/'
+      path: '/delivery-persons/$id'
+      fullPath: '/delivery-persons/$id'
+      preLoaderRoute: typeof AuthenticatedDeliveryPersonsIdIndexLazyImport
       parentRoute: typeof AuthenticatedRouteImport
     }
   }
@@ -527,26 +614,38 @@ const AuthenticatedSettingsRouteLazyRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteLazyRoute: typeof AuthenticatedSettingsRouteLazyRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedPackagesIdRoute: typeof AuthenticatedPackagesIdRoute
+  AuthenticatedDeliveryPersonsCreateLazyRoute: typeof AuthenticatedDeliveryPersonsCreateLazyRoute
+  AuthenticatedPackagesIdLazyRoute: typeof AuthenticatedPackagesIdLazyRoute
   AuthenticatedPackagesCreateLazyRoute: typeof AuthenticatedPackagesCreateLazyRoute
   AuthenticatedAppsIndexLazyRoute: typeof AuthenticatedAppsIndexLazyRoute
   AuthenticatedChatsIndexLazyRoute: typeof AuthenticatedChatsIndexLazyRoute
+  AuthenticatedDeliveryPersonsIndexLazyRoute: typeof AuthenticatedDeliveryPersonsIndexLazyRoute
   AuthenticatedHelpCenterIndexLazyRoute: typeof AuthenticatedHelpCenterIndexLazyRoute
   AuthenticatedPackagesIndexLazyRoute: typeof AuthenticatedPackagesIndexLazyRoute
   AuthenticatedUsersIndexLazyRoute: typeof AuthenticatedUsersIndexLazyRoute
+  AuthenticatedDeliveryPersonsIdEditLazyRoute: typeof AuthenticatedDeliveryPersonsIdEditLazyRoute
+  AuthenticatedDeliveryPersonsIdIndexLazyRoute: typeof AuthenticatedDeliveryPersonsIdIndexLazyRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteLazyRoute:
     AuthenticatedSettingsRouteLazyRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedPackagesIdRoute: AuthenticatedPackagesIdRoute,
+  AuthenticatedDeliveryPersonsCreateLazyRoute:
+    AuthenticatedDeliveryPersonsCreateLazyRoute,
+  AuthenticatedPackagesIdLazyRoute: AuthenticatedPackagesIdLazyRoute,
   AuthenticatedPackagesCreateLazyRoute: AuthenticatedPackagesCreateLazyRoute,
   AuthenticatedAppsIndexLazyRoute: AuthenticatedAppsIndexLazyRoute,
   AuthenticatedChatsIndexLazyRoute: AuthenticatedChatsIndexLazyRoute,
+  AuthenticatedDeliveryPersonsIndexLazyRoute:
+    AuthenticatedDeliveryPersonsIndexLazyRoute,
   AuthenticatedHelpCenterIndexLazyRoute: AuthenticatedHelpCenterIndexLazyRoute,
   AuthenticatedPackagesIndexLazyRoute: AuthenticatedPackagesIndexLazyRoute,
   AuthenticatedUsersIndexLazyRoute: AuthenticatedUsersIndexLazyRoute,
+  AuthenticatedDeliveryPersonsIdEditLazyRoute:
+    AuthenticatedDeliveryPersonsIdEditLazyRoute,
+  AuthenticatedDeliveryPersonsIdIndexLazyRoute:
+    AuthenticatedDeliveryPersonsIdIndexLazyRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -567,7 +666,8 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
-  '/packages/$id': typeof AuthenticatedPackagesIdRoute
+  '/delivery-persons/create': typeof AuthenticatedDeliveryPersonsCreateLazyRoute
+  '/packages/$id': typeof AuthenticatedPackagesIdLazyRoute
   '/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
@@ -575,10 +675,13 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
+  '/delivery-persons': typeof AuthenticatedDeliveryPersonsIndexLazyRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexLazyRoute
   '/packages': typeof AuthenticatedPackagesIndexLazyRoute
   '/settings/': typeof AuthenticatedSettingsIndexLazyRoute
   '/users': typeof AuthenticatedUsersIndexLazyRoute
+  '/delivery-persons/$id/edit': typeof AuthenticatedDeliveryPersonsIdEditLazyRoute
+  '/delivery-persons/$id': typeof AuthenticatedDeliveryPersonsIdIndexLazyRoute
 }
 
 export interface FileRoutesByTo {
@@ -594,7 +697,8 @@ export interface FileRoutesByTo {
   '/404': typeof errors404LazyRoute
   '/503': typeof errors503LazyRoute
   '/': typeof AuthenticatedIndexRoute
-  '/packages/$id': typeof AuthenticatedPackagesIdRoute
+  '/delivery-persons/create': typeof AuthenticatedDeliveryPersonsCreateLazyRoute
+  '/packages/$id': typeof AuthenticatedPackagesIdLazyRoute
   '/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
@@ -602,10 +706,13 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
   '/apps': typeof AuthenticatedAppsIndexLazyRoute
   '/chats': typeof AuthenticatedChatsIndexLazyRoute
+  '/delivery-persons': typeof AuthenticatedDeliveryPersonsIndexLazyRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexLazyRoute
   '/packages': typeof AuthenticatedPackagesIndexLazyRoute
   '/settings': typeof AuthenticatedSettingsIndexLazyRoute
   '/users': typeof AuthenticatedUsersIndexLazyRoute
+  '/delivery-persons/$id/edit': typeof AuthenticatedDeliveryPersonsIdEditLazyRoute
+  '/delivery-persons/$id': typeof AuthenticatedDeliveryPersonsIdIndexLazyRoute
 }
 
 export interface FileRoutesById {
@@ -625,7 +732,8 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500LazyRoute
   '/(errors)/503': typeof errors503LazyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/packages/$id': typeof AuthenticatedPackagesIdRoute
+  '/_authenticated/delivery-persons/create': typeof AuthenticatedDeliveryPersonsCreateLazyRoute
+  '/_authenticated/packages/$id': typeof AuthenticatedPackagesIdLazyRoute
   '/_authenticated/packages/create': typeof AuthenticatedPackagesCreateLazyRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountLazyRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceLazyRoute
@@ -633,10 +741,13 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsLazyRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexLazyRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexLazyRoute
+  '/_authenticated/delivery-persons/': typeof AuthenticatedDeliveryPersonsIndexLazyRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexLazyRoute
   '/_authenticated/packages/': typeof AuthenticatedPackagesIndexLazyRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexLazyRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexLazyRoute
+  '/_authenticated/delivery-persons/$id/edit': typeof AuthenticatedDeliveryPersonsIdEditLazyRoute
+  '/_authenticated/delivery-persons/$id/': typeof AuthenticatedDeliveryPersonsIdIndexLazyRoute
 }
 
 export interface FileRouteTypes {
@@ -656,6 +767,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/delivery-persons/create'
     | '/packages/$id'
     | '/packages/create'
     | '/settings/account'
@@ -664,10 +776,13 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/apps'
     | '/chats'
+    | '/delivery-persons'
     | '/help-center'
     | '/packages'
     | '/settings/'
     | '/users'
+    | '/delivery-persons/$id/edit'
+    | '/delivery-persons/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/500'
@@ -682,6 +797,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/503'
     | '/'
+    | '/delivery-persons/create'
     | '/packages/$id'
     | '/packages/create'
     | '/settings/account'
@@ -690,10 +806,13 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/apps'
     | '/chats'
+    | '/delivery-persons'
     | '/help-center'
     | '/packages'
     | '/settings'
     | '/users'
+    | '/delivery-persons/$id/edit'
+    | '/delivery-persons/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -711,6 +830,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/delivery-persons/create'
     | '/_authenticated/packages/$id'
     | '/_authenticated/packages/create'
     | '/_authenticated/settings/account'
@@ -719,10 +839,13 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/delivery-persons/'
     | '/_authenticated/help-center/'
     | '/_authenticated/packages/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/_authenticated/delivery-persons/$id/edit'
+    | '/_authenticated/delivery-persons/$id/'
   fileRoutesById: FileRoutesById
 }
 
@@ -788,13 +911,17 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated/settings",
         "/_authenticated/",
+        "/_authenticated/delivery-persons/create",
         "/_authenticated/packages/$id",
         "/_authenticated/packages/create",
         "/_authenticated/apps/",
         "/_authenticated/chats/",
+        "/_authenticated/delivery-persons/",
         "/_authenticated/help-center/",
         "/_authenticated/packages/",
-        "/_authenticated/users/"
+        "/_authenticated/users/",
+        "/_authenticated/delivery-persons/$id/edit",
+        "/_authenticated/delivery-persons/$id/"
       ]
     },
     "/(auth)/500": {
@@ -848,8 +975,12 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/index.tsx",
       "parent": "/_authenticated"
     },
+    "/_authenticated/delivery-persons/create": {
+      "filePath": "_authenticated/delivery-persons/create.lazy.tsx",
+      "parent": "/_authenticated"
+    },
     "/_authenticated/packages/$id": {
-      "filePath": "_authenticated/packages/$id.tsx",
+      "filePath": "_authenticated/packages/$id.lazy.tsx",
       "parent": "/_authenticated"
     },
     "/_authenticated/packages/create": {
@@ -880,6 +1011,10 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/chats/index.lazy.tsx",
       "parent": "/_authenticated"
     },
+    "/_authenticated/delivery-persons/": {
+      "filePath": "_authenticated/delivery-persons/index.lazy.tsx",
+      "parent": "/_authenticated"
+    },
     "/_authenticated/help-center/": {
       "filePath": "_authenticated/help-center/index.lazy.tsx",
       "parent": "/_authenticated"
@@ -894,6 +1029,14 @@ export const routeTree = rootRoute
     },
     "/_authenticated/users/": {
       "filePath": "_authenticated/users/index.lazy.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/delivery-persons/$id/edit": {
+      "filePath": "_authenticated/delivery-persons/$id/edit.lazy.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/delivery-persons/$id/": {
+      "filePath": "_authenticated/delivery-persons/$id/index.lazy.tsx",
       "parent": "/_authenticated"
     }
   }

@@ -1,38 +1,42 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
-export function Header({
-  className,
-  fixed = false,
-  children,
-}: {
-  className?: string
+interface HeaderProps extends React.HTMLAttributes<HTMLElement> {
   fixed?: boolean
-  children?: React.ReactNode
-}) {
-  const [isScrolled, setIsScrolled] = useState(false)
+  ref?: React.Ref<HTMLElement>
+}
 
-  useEffect(() => {
-    if (!fixed) return
+export const Header = ({
+  className,
+  fixed,
+  children,
+  ...props
+}: HeaderProps) => {
+  const [offset, setOffset] = React.useState(0)
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0)
+  React.useEffect(() => {
+    const onScroll = () => {
+      setOffset(document.body.scrollTop || document.documentElement.scrollTop)
     }
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [fixed])
+    // Add scroll listener to the body
+    document.addEventListener('scroll', onScroll, { passive: true })
+
+    // Clean up the event listener on unmount
+    return () => document.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
     <header
       className={cn(
-        'flex h-14 items-center gap-4 border-b bg-background',
-        fixed && 'sticky top-0 z-40',
-        isScrolled && 'shadow-sm',
+        'flex items-center gap-3 sm:gap-4 bg-background p-4 h-16',
+        fixed && 'header-fixed peer/header w-[inherit] fixed z-50 rounded-md',
+        offset > 10 && fixed ? 'shadow' : 'shadow-none',
         className
       )}
+      {...props}
     >
       <SidebarTrigger variant='outline' className='scale-125 sm:scale-100' />
       <Separator orientation='vertical' className='h-6' />

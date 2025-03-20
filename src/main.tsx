@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import axios, { AxiosError } from 'axios'
@@ -16,41 +15,47 @@ import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 
-axios.defaults.baseURL = 'https://courier-server-q8dx.onrender.com'
+// Get the appropriate API URL based on environment
+const apiUrl = import.meta.env.DEV 
+  ? import.meta.env.VITE_API_URL 
+  : import.meta.env.VITE_PRODUCTION_API_URL
+
+if (!apiUrl) {
+  throw new Error('API URL not configured. Please check your environment variables.')
+}
+
+// Log which API URL is being used in development
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.log(`🌐 Using API URL: ${apiUrl}`)
+}
+
+axios.defaults.baseURL = apiUrl
 axios.defaults.withCredentials = true
 
-// Add global request interceptor for JWT
-axios.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore.getState().auth.accessToken
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
+// Add auth token to requests
+axios.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().auth.accessToken
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
-)
+  return config
+})
 
-// Add global response interceptor for token handling
-axios.interceptors.response.use(
-  (response) => {
-    const token = response.headers.authorization
-    if (token) {
-      useAuthStore.getState().auth.setAccessToken(token.replace('Bearer ', ''))
-    }
-    return response
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+// Log API requests in development
+if (import.meta.env.DEV) {
+  axios.interceptors.request.use((config) => {
+    // eslint-disable-next-line no-console
+    console.log(`🌐 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`)
+    return config
+  })
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
+        // eslint-disable-next-line no-console
         if (import.meta.env.DEV) console.log({ failureCount, error })
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
@@ -58,7 +63,7 @@ const queryClient = new QueryClient({
 
         return !(
           error instanceof AxiosError &&
-          [401, 403, 429].includes(error.response?.status ?? 0)
+          [401, 403].includes(error.response?.status ?? 0)
         )
       },
       refetchOnWindowFocus: import.meta.env.PROD,
@@ -67,6 +72,15 @@ const queryClient = new QueryClient({
     mutations: {
       onError: (error) => {
         handleServerError(error)
+
+        if (error instanceof AxiosError) {
+          if (error.response?.status === 304) {
+            toast({
+              variant: 'destructive',
+              title: 'Content not modified!',
+            })
+          }
+        }
       },
     },
   },
@@ -82,13 +96,6 @@ const queryClient = new QueryClient({
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
-        if (error.response?.status === 429) {
-          toast({
-            variant: 'destructive',
-            title: 'Rate limit exceeded',
-            description: 'Please try again later',
-          })
-        }
         if (error.response?.status === 500) {
           toast({
             variant: 'destructive',
@@ -97,12 +104,7 @@ const queryClient = new QueryClient({
           router.navigate({ to: '/500' })
         }
         if (error.response?.status === 403) {
-          toast({
-            variant: 'destructive',
-            title: 'Access Denied',
-            description: 'You do not have permission to perform this action',
-          })
-          // router.navigate({ to: '/403' })
+          // router.navigate("/forbidden", { replace: true });
         }
       }
     },

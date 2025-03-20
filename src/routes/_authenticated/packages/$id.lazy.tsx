@@ -1,7 +1,6 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import PackageDetailsRoute from '@/features/packages/details/routes/package-details-route'
+import PackageDetailsPage from '@/features/packages/details'
 
 export const Route = createLazyFileRoute('/_authenticated/packages/$id')({
-  component: PackageDetailsRoute,
-  loader: ({ params: { id } }) => ({ id })
+  component: PackageDetailsPage,
 }) 

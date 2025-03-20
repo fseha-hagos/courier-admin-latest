@@ -1,41 +1,64 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Check, X } from 'lucide-react'
-import { UseFormReturn } from 'react-hook-form'
-import { PackageForm, WEIGHT_RANGES } from '../types'
-import { cn } from '@/lib/utils'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { IconChevronsRight } from '@tabler/icons-react'
-import { useState } from 'react'
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Check, X } from "lucide-react"
+import { IconChevronsRight } from "@tabler/icons-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
+import { UseFormReturn } from "react-hook-form"
+import { PackageForm } from "../types"
+import { labels } from '../../data/data'
 
-// Define the label type
-interface Label {
-  value: string
-  label: string
-}
-
-// Mock labels data (replace with actual import when available)
-const labels: Label[] = [
-  { value: "fragile", label: "Fragile" },
-  { value: "perishable", label: "Perishable" },
-  { value: "urgent", label: "Urgent" },
-  // Add more labels as needed
-]
+const WEIGHT_RANGES = [
+  {
+    id: "small",
+    label: "Small Package",
+    description: "0.1 - 5 kg",
+    value: "0.1-5",
+    recommendedVehicle: "BICYCLE",
+    priceRange: "100-200 Birr"
+  },
+  {
+    id: "medium",
+    label: "Medium Package",
+    description: "5 - 15 kg",
+    value: "5-15",
+    recommendedVehicle: "MOTORCYCLE",
+    priceRange: "200-350 Birr"
+  },
+  {
+    id: "large",
+    label: "Large Package",
+    description: "15 - 30 kg",
+    value: "15-30",
+    recommendedVehicle: "MOTORCYCLE",
+    priceRange: "350-500 Birr"
+  },
+  {
+    id: "xlarge",
+    label: "Extra Large Package",
+    description: "30 - 100 kg",
+    value: "30-100",
+    recommendedVehicle: "CAR",
+    priceRange: "500-1000 Birr"
+  },
+] as const;
 
 interface PackageInformationFormProps {
   form: UseFormReturn<PackageForm>
+  className?: string
 }
 
-export function PackageInformationForm({ form }: PackageInformationFormProps) {
+export function PackageInformationForm({ form, className }: PackageInformationFormProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
   return (
-    <Card className="mb-4">
+    <Card className={cn("mb-4", className)}>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Package Information</span>
@@ -120,7 +143,7 @@ export function PackageInformationForm({ form }: PackageInformationFormProps) {
                         <X
                           className="h-3 w-3 cursor-pointer"
                           onClick={() => {
-                            const newLabels = Array.isArray(field.value) 
+                            const newLabels = Array.isArray(field.value)
                               ? field.value.filter((l) => l !== labelValue)
                               : [];
                             field.onChange(newLabels);
@@ -149,8 +172,8 @@ export function PackageInformationForm({ form }: PackageInformationFormProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-[400px] p-0" align="start">
                   <Command>
-                    <CommandInput 
-                      placeholder="Search labels..." 
+                    <CommandInput
+                      placeholder="Search labels..."
                       onValueChange={(value) => setSearchTerm(value)}
                     />
                     <CommandList>

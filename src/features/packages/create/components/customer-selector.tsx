@@ -1,29 +1,30 @@
-import { useQuery } from '@tanstack/react-query'
-import { customerApi } from '@/features/customers/data/customerApi'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Badge } from '@/components/ui/badge'
-import { IconUserCheck } from '@tabler/icons-react'
-import { AlertCircle, Check, Loader2, X } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
-import axios from 'axios'
-import { UseFormReturn } from 'react-hook-form'
-import { PackageForm } from '../types'
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { customerApi } from "@/features/customers/data/customerApi"
+import { Check, X, Loader2, AlertCircle } from "lucide-react"
+import { IconUserCheck } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { cn } from "@/lib/utils"
+import axios from "axios"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { UseFormReturn } from "react-hook-form"
+import { PackageForm } from "../types"
 
 interface CustomerSelectorProps {
   form: UseFormReturn<PackageForm>
+  className?: string
 }
 
-export function CustomerSelector({ form }: CustomerSelectorProps) {
+export function CustomerSelector({ form, className }: CustomerSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [page, setPage] = useState(1)
   const CUSTOMERS_PER_PAGE = 10
 
-  const { 
+  const {
     data: customersData,
     isLoading: isLoadingCustomers,
     isError: isCustomersError,
@@ -33,10 +34,10 @@ export function CustomerSelector({ form }: CustomerSelectorProps) {
     isRefetching
   } = useQuery({
     queryKey: ['customers', { search: searchTerm, page, limit: CUSTOMERS_PER_PAGE }],
-    queryFn: () => customerApi.getAll({ 
-      search: searchTerm, 
-      page, 
-      limit: CUSTOMERS_PER_PAGE 
+    queryFn: () => customerApi.getAll({
+      search: searchTerm,
+      page,
+      limit: CUSTOMERS_PER_PAGE
     }),
     staleTime: 1000 * 60 * 15, // 15 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
@@ -45,7 +46,7 @@ export function CustomerSelector({ form }: CustomerSelectorProps) {
   })
 
   return (
-    <Card className="mb-4">
+    <Card className={cn("mb-4", className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium">Customer Information</CardTitle>
       </CardHeader>
@@ -77,8 +78,8 @@ export function CustomerSelector({ form }: CustomerSelectorProps) {
                     </div>
                   )}
                   <Command className="border rounded-md">
-                    <CommandInput 
-                      placeholder="Search by name or phone number..." 
+                    <CommandInput
+                      placeholder="Search by name or phone number..."
                       onValueChange={(value) => {
                         setSearchTerm(value)
                         setPage(1)
@@ -96,7 +97,7 @@ export function CustomerSelector({ form }: CustomerSelectorProps) {
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription className="flex flex-col gap-1">
                             <span>
-                              {axios.isAxiosError(customersError) 
+                              {axios.isAxiosError(customersError)
                                 ? customersError.response?.data?.message || 'Failed to load customers'
                                 : 'Failed to load customers'}
                             </span>
@@ -108,9 +109,9 @@ export function CustomerSelector({ form }: CustomerSelectorProps) {
                           </AlertDescription>
                         </Alert>
                         <div className="flex flex-col gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="w-full"
                             onClick={() => refetchCustomers()}
                             disabled={isRefetching}

@@ -15,6 +15,7 @@ import {
   IconServerOff,
   IconSettings,
   IconTool,
+  IconTruck,
   IconUserCog,
   IconUserOff,
   IconUsers,
@@ -54,6 +55,11 @@ export const getSidebarData = (): SidebarData => {
             title: 'Packages',
             url: '/packages',
             icon: IconChecklist,
+          },
+          {
+            title: 'Delivery Persons',
+            url: '/delivery-persons',
+            icon: IconTruck,
           },
           {
             title: 'Apps',

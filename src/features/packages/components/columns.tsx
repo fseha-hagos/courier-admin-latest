@@ -8,10 +8,11 @@ import { format } from 'date-fns'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useQuery } from '@tanstack/react-query'
 import { customerApi } from '@/features/customers/data/customerApi'
-import { Loader2, ArrowDownToLine, ArrowUpFromLine, Trash2 } from 'lucide-react'
+import { Loader2, ArrowDownToLine, ArrowUpFromLine, Trash2, ArrowRight } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
 
 function formatPlusCode(address: string) {
   // Split the Plus Code from the location name
@@ -99,19 +100,23 @@ export const columns: ColumnDef<Package>[] = [
       const id: string = row.getValue('id')
       const isDeleted = row.original.deleted
       return (
-        <Link
-          to={"/packages/$id"}
-          params={{ id }}
+        <Button
+          variant="link"
+          asChild
           className={cn(
-            'w-[80px] font-medium hover:underline',
-            isDeleted && 'line-through text-muted-foreground'
+            'p-0 h-auto font-medium text-base hover:text-primary transition-colors',
+            'flex items-center gap-1.5 group',
+            isDeleted && 'line-through text-muted-foreground hover:text-muted-foreground'
           )}
         >
-          #{id.slice(-6).toUpperCase()}
-          {isDeleted && (
-            <Trash2 className="h-3 w-3 inline-block ml-1 text-muted-foreground" />
-          )}
-        </Link>
+          <Link to="/packages/$id" params={{ id }}>
+            <span className="font-mono">#{id.slice(-6).toUpperCase()}</span>
+            <ArrowRight className="h-3.5 w-3.5 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+            {isDeleted && (
+              <Trash2 className="h-3 w-3 text-muted-foreground" />
+            )}
+          </Link>
+        </Button>
       )
     },
     enableSorting: false,
@@ -292,10 +297,11 @@ export const columns: ColumnDef<Package>[] = [
     id: 'deleted',
     accessorFn: (row) => row.deleted ? 'true' : 'false',
     enableHiding: false,
+    enableColumnFilter: true,
     filterFn: (row, id, value) => {
       if (value === 'all') return true
       return row.getValue(id) === value
-    },
+    }
   },
   {
     id: 'actions',

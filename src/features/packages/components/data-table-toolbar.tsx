@@ -22,21 +22,25 @@ export function DataTableToolbar<TData>({
   const showDeleted = table.getColumn('deleted')?.getFilterValue() === 'true'
   const queryClient = useQueryClient()
 
-  const handleTrashClick = () => {
+  const handleTrashClick = async () => {
     const deletedColumn = table.getColumn('deleted')
     if (deletedColumn) {
       const newValue = deletedColumn.getFilterValue() === 'true' ? 'false' : 'true'
-      deletedColumn.setFilterValue(newValue)
+      
+      // First update the parent state
       onShowDeletedChange(newValue === 'true')
+      
+      // Then update the filter value
+      deletedColumn.setFilterValue(newValue)
       
       // Prefetch the other dataset
       if (newValue === 'true') {
-        queryClient.prefetchQuery({
+        await queryClient.prefetchQuery({
           queryKey: ['packages', 'deleted'],
           queryFn: () => packagesApi.getDeleted(),
         })
       } else {
-        queryClient.prefetchQuery({
+        await queryClient.prefetchQuery({
           queryKey: ['packages'],
           queryFn: () => packagesApi.getAll(),
         })

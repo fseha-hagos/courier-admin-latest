@@ -1,10 +1,44 @@
 import axios from 'axios'
 import { Customer } from '../types'
+import { useAuthStore } from '@/stores/authStore'
+
+// Get the appropriate API URL based on environment
+const apiUrl = import.meta.env.DEV 
+  ? import.meta.env.VITE_API_URL 
+  : import.meta.env.VITE_PRODUCTION_API_URL
+
+if (!apiUrl) {
+  throw new Error('API URL not configured. Please check your environment variables.')
+}
+
+// Log which API URL is being used in development
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.log(`🌐 Using API URL: ${apiUrl}`)
+}
 
 const api = axios.create({
-  baseURL: 'https://courier-server-q8dx.onrender.com/api',
+  baseURL: apiUrl,
   withCredentials: true,
 })
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().auth.accessToken
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Log API requests in development
+if (import.meta.env.DEV) {
+  api.interceptors.request.use((config) => {
+    // eslint-disable-next-line no-console
+    console.log(`🌐 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`)
+    return config
+  })
+}
 
 interface PaginationResponse {
   total: number

@@ -5,9 +5,24 @@ import { createAuthClient } from "better-auth/react"
 import { useAuthStore } from "@/stores/authStore"
 import { adminClient } from "better-auth/client/plugins"
 import { inferAdditionalFields } from "better-auth/client/plugins"
+import { toast } from "@/hooks/use-toast"
+
+// Get the appropriate API URL based on environment
+const apiUrl = import.meta.env.DEV 
+  ? "http://localhost:3000" 
+  : "https://courier-server-q8dx.onrender.com"
+
+if (!apiUrl) {
+  throw new Error('API URL not configured. Please check your environment variables.')
+}
+
+// Log which API URL is being used in development
+if (import.meta.env.DEV) {
+  console.log(`🔐 Auth client using API URL: ${apiUrl}`)
+}
 
 export const authClient = createAuthClient({
-    baseURL: "https://courier-server-q8dx.onrender.com",
+    baseURL: apiUrl,
     plugins: [
         phoneNumberClient(), 
         adminClient(),
@@ -23,19 +38,43 @@ export const authClient = createAuthClient({
         })
     ],
     fetchOptions: {
-        credentials: 'include',
         onSuccess: (ctx) => {
-            console.log("onSuccess: ", ctx)
+            if (import.meta.env.DEV) {
+                console.log("Auth success:", ctx)
+            }
+        },
+        onError: (ctx) => {
+            // Handle authentication errors
+            if (ctx.error.status === 401) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Session expired',
+                    description: 'Please log in again'
+                })
+                useAuthStore.getState().auth.reset()
+            }
         },
         onResponse(context) {
-            const token = context.response.headers.get('authorization')
-            if (token) {
-                useAuthStore.getState().auth.setAccessToken(token.replace('Bearer ', ''))
+            if (import.meta.env.DEV) {
+                console.log("Auth response headers:", context.response.headers)
+                console.log("Current auth token:", useAuthStore.getState().auth.accessToken)
             }
         },
     },
     auth: {
         type: "Bearer",
-        token: () => useAuthStore.getState().auth.accessToken || "",
+        token: () => {
+            const token = useAuthStore.getState().auth.accessToken
+            if (!token) {
+                return ""
+            }
+            try {
+                // Remove quotes if token is stored as JSON string
+                return typeof token === 'string' ? token.replace(/^"|"$/g, '') : token
+            } catch (e) {
+                console.error('Error parsing auth token:', e)
+                return ""
+            }
+        },
     }
 })
