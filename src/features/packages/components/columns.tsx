@@ -11,6 +11,7 @@ import { customerApi } from '@/features/customers/data/customerApi'
 import { Loader2, ArrowDownToLine, ArrowUpFromLine, Trash2 } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
 
 function formatPlusCode(address: string) {
   // Split the Plus Code from the location name
@@ -98,15 +99,19 @@ export const columns: ColumnDef<Package>[] = [
       const id: string = row.getValue('id')
       const isDeleted = row.original.deleted
       return (
-        <div className={cn(
-          'w-[80px] font-medium',
-          isDeleted && 'line-through text-muted-foreground'
-        )}>
+        <Link
+          to={"/packages/$id"}
+          params={{ id }}
+          className={cn(
+            'w-[80px] font-medium hover:underline',
+            isDeleted && 'line-through text-muted-foreground'
+          )}
+        >
           #{id.slice(-6).toUpperCase()}
           {isDeleted && (
             <Trash2 className="h-3 w-3 inline-block ml-1 text-muted-foreground" />
           )}
-        </div>
+        </Link>
       )
     },
     enableSorting: false,

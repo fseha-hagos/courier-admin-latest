@@ -2,12 +2,12 @@
 
 import { phoneNumberClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
-import { useAuthStore } from "@/stores/authStore"; // Import the authStore
+import { useAuthStore } from "@/stores/authStore"
 import { adminClient } from "better-auth/client/plugins"
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import { inferAdditionalFields } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
-    baseURL: "http://localhost:3000",
+    baseURL: "https://courier-server-q8dx.onrender.com",
     plugins: [
         phoneNumberClient(), 
         adminClient(),
@@ -23,16 +23,19 @@ export const authClient = createAuthClient({
         })
     ],
     fetchOptions: {
+        credentials: 'include',
         onSuccess: (ctx) => {
             console.log("onSuccess: ", ctx)
         },
         onResponse(context) {
-            console.log("onResponse: ", context.response.headers.entries())
-            console.log("authStore token: ", useAuthStore.getState().auth.accessToken) // Get the token from useAuthStore
+            const token = context.response.headers.get('authorization')
+            if (token) {
+                useAuthStore.getState().auth.setAccessToken(token.replace('Bearer ', ''))
+            }
         },
     },
     auth: {
         type: "Bearer",
-        token: () => useAuthStore.getState().auth.accessToken || "", // Get the token from useAuthStore
+        token: () => useAuthStore.getState().auth.accessToken || "",
     }
 })

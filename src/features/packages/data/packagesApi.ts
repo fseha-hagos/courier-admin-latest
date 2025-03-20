@@ -38,7 +38,7 @@ interface DeletedPackagesResponse {
 }
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'https://courier-server-q8dx.onrender.com/api',
   withCredentials: true,
 })
 

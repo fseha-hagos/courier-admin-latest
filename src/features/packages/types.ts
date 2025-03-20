@@ -1,19 +1,6 @@
-export interface Location {
-  id: string;
-  placeId: string;
-  address: string;
-  name?: string;
-  type: LocationType;
-  latitude: number;
-  longitude: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export enum LocationType {
-  PICKUP = 'PICKUP',
-  DELIVERY = 'DELIVERY',
-  WAYPOINT = 'WAYPOINT'
+export interface Label {
+  value: string;
+  label: string;
 }
 
 export enum DeliveryStatus {
@@ -24,68 +11,111 @@ export enum DeliveryStatus {
   DECLINED = 'DECLINED'
 }
 
-export interface PackageLabel {
-  id: string;
-  value: string;
-  label: string;
+export enum PackageStatus {
+  PENDING = 'PENDING',
+  ASSIGNED = 'ASSIGNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
 }
 
-export interface LocationHistory {
+export enum LocationType {
+  PICKUP = 'PICKUP',
+  DELIVERY = 'DELIVERY',
+  WAYPOINT = 'WAYPOINT'
+}
+
+export interface Location {
+  id: string;
+  placeId: string;
+  address: string;
+  name?: string;
+  type: LocationType;
+  latitude: number;
+  longitude: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phoneNumber: string;
+}
+
+export interface Delivery {
   id: string;
   packageId: string;
-  locationId: string;
-  timestamp: Date;
-  status: string;
-  currentLat?: number;
-  currentLng?: number;
+  deliveryPersonId: string;
+  vehicleId: string;
+  pickupTime?: string;
+  deliveryTime?: string;
+  estimatedDeliveryTime?: string;
+  currentLocationId?: string;
+  currentLocation?: Location;
+  status: DeliveryStatus;
+  createdAt: string;
+  deliveryRating?: number;
+}
+
+export interface PackagePricing {
+  id: string;
+  packageId: string;
+  basePrice: number;
+  distance: number;
+  weightCharge: number;
+  urgentCharge?: number;
+  totalPrice: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PackageTimeline {
+  id: string;
+  packageId: string;
+  created: string;
+  assigned?: string;
+  pickupReady?: string;
+  pickedUp?: string;
+  inTransit?: string;
+  arriving?: string;
+  delivered?: string;
+  failed?: string;
+  cancelled?: string;
+  updatedAt: string;
 }
 
 export interface Package {
   id: string;
   customerId: string;
+  customer: Customer;
   description: string;
   weight: number;
   pickupLocationId: string;
   deliveryLocationId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date | null;
-  deleted: boolean;
   pickupLocation: Location;
   deliveryLocation: Location;
-  delivery?: {
-    id: string;
-    status: DeliveryStatus;
-    deliveryPersonId: string;
-    pickupTime?: Date;
-    deliveryTime?: Date;
-  };
-  labels: PackageLabel[];
-  locationHistory: LocationHistory[];
+  status: PackageStatus;
+  pricing?: PackagePricing;
+  timeline?: PackageTimeline;
+  delivery?: Delivery;
+  labels?: Label[];
+  createdAt: string;
+  updatedAt: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface PackageResponse {
   success: boolean;
-  message?: string;
-  error?: string;
   package: Package;
-}
-
-export interface PackagesResponse {
-  success: boolean;
-  error?: string;
-  packages: Package[];
-  pagination: {
-    total: number;
-    pages: number;
-    currentPage: number;
-    limit: number;
-  };
 }
 
 export interface PaginationResponse {
   total: number;
   pages: number;
-  currentPage: number;
+  page: number;
   limit: number;
 } 

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import axios, { AxiosError } from 'axios'
@@ -15,13 +16,41 @@ import './index.css'
 // Generated Routes
 import { routeTree } from './routeTree.gen'
 
-axios.defaults.baseURL = 'http://localhost:3000'; // Replace with your API base URL
-axios.defaults.withCredentials = true; // Send cookies with every request
+axios.defaults.baseURL = 'https://courier-server-q8dx.onrender.com'
+axios.defaults.withCredentials = true
+
+// Add global request interceptor for JWT
+axios.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().auth.accessToken
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Add global response interceptor for token handling
+axios.interceptors.response.use(
+  (response) => {
+    const token = response.headers.authorization
+    if (token) {
+      useAuthStore.getState().auth.setAccessToken(token.replace('Bearer ', ''))
+    }
+    return response
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        // eslint-disable-next-line no-console
         if (import.meta.env.DEV) console.log({ failureCount, error })
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
@@ -29,7 +58,7 @@ const queryClient = new QueryClient({
 
         return !(
           error instanceof AxiosError &&
-          [401, 403].includes(error.response?.status ?? 0)
+          [401, 403, 429].includes(error.response?.status ?? 0)
         )
       },
       refetchOnWindowFocus: import.meta.env.PROD,
@@ -38,15 +67,6 @@ const queryClient = new QueryClient({
     mutations: {
       onError: (error) => {
         handleServerError(error)
-
-        if (error instanceof AxiosError) {
-          if (error.response?.status === 304) {
-            toast({
-              variant: 'destructive',
-              title: 'Content not modified!',
-            })
-          }
-        }
       },
     },
   },
@@ -62,6 +82,13 @@ const queryClient = new QueryClient({
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
+        if (error.response?.status === 429) {
+          toast({
+            variant: 'destructive',
+            title: 'Rate limit exceeded',
+            description: 'Please try again later',
+          })
+        }
         if (error.response?.status === 500) {
           toast({
             variant: 'destructive',
@@ -70,7 +97,12 @@ const queryClient = new QueryClient({
           router.navigate({ to: '/500' })
         }
         if (error.response?.status === 403) {
-          // router.navigate("/forbidden", { replace: true });
+          toast({
+            variant: 'destructive',
+            title: 'Access Denied',
+            description: 'You do not have permission to perform this action',
+          })
+          // router.navigate({ to: '/403' })
         }
       }
     },
