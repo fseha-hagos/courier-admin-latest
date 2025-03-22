@@ -2,6 +2,7 @@
 import { io, Socket } from 'socket.io-client'
 import { DeliveryStatus } from '@/features/packages/types'
 import { DeliveryPerson } from '@/features/delivery-persons/types'
+import { useAuthStore } from '@/stores/authStore'
 
 // Event types
 export type WebSocketEvent = 
@@ -121,66 +122,95 @@ export type WebSocketEventPayload = {
 // Event handler type
 type EventHandler<T extends WebSocketEvent> = (data: WebSocketEventPayload[T]) => void
 
+type ConnectionHandler = () => void
+type ReconnectHandler = (attempt: number) => void
+
 export class WebSocketService {
   private socket: Socket | null = null
   private eventHandlers: Map<WebSocketEvent, Set<EventHandler<WebSocketEvent>>> = new Map()
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = 1000
-  private connectionHandlers = {
-    connect: new Set<() => void>(),
-    disconnect: new Set<() => void>()
+  private pendingSubscriptions: Array<{ event: WebSocketEvent; handler: EventHandler<WebSocketEvent> }> = []
+  private connectionHandlers: {
+    connect: ConnectionHandler[]
+    disconnect: ConnectionHandler[]
+    reconnectAttempt: ReconnectHandler[]
+  } = {
+    connect: [],
+    disconnect: [],
+    reconnectAttempt: []
   }
+  private isDashboardSubscribed: boolean = false
 
   constructor() {
     this.connect()
   }
 
   private connect() {
-    // Remove /api suffix from the base URL for WebSocket connections
-    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/api$/, '')
-    console.log('Attempting to connect to WebSocket server at:', baseUrl)
+    if (this.socket) {
+      return
+    }
 
-    this.socket = io(baseUrl, {
-      transports: ['websocket', 'polling'],
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      allowEIO3: true,
-      pingTimeout: 60000,
-      pingInterval: 25000,
-      withCredentials: true
-    })
+    const apiUrl = import.meta.env.DEV 
+      ? "http://localhost:3000" 
+      : "https://courier-server-q8dx.onrender.com"
 
-    this.socket.on('connect', () => {
-      console.log('Connected to WebSocket server')
-      this.reconnectAttempts = 0
-      this.subscribeToDashboard()
-      this.connectionHandlers.connect.forEach(handler => handler())
+    if (!apiUrl) {
+      console.error('WebSocketService: API URL not configured')
+      return
+    }
+
+    const { auth } = useAuthStore.getState()
+    if (!auth.accessToken) {
+      console.error('WebSocketService: No auth token found')
+      return
+    }
+
+    this.socket = io(apiUrl, {
+      transports: ['websocket'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      auth: { token: auth.accessToken }
     })
 
     this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error.message)
-      this.reconnectAttempts++
-      
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached. Please check if the server is running.')
-        this.disconnect()
-      }
-    })
-
-    this.socket.on('disconnect', (reason) => {
-      console.log('Disconnected from WebSocket server:', reason)
+      console.error('WebSocketService: Connection error:', error.message)
       this.connectionHandlers.disconnect.forEach(handler => handler())
     })
 
     this.socket.on('error', (error) => {
-      console.error('WebSocket error:', error)
+      console.error('WebSocketService: Socket error:', error)
+      this.connectionHandlers.disconnect.forEach(handler => handler())
+    })
+
+    this.socket.on('connect', () => {
+      this.connectionHandlers.connect.forEach(handler => handler())
+      
+      // Process pending subscriptions
+      this.pendingSubscriptions.forEach(({ event, handler }) => {
+        this.subscribe(event, handler)
+      })
+      this.pendingSubscriptions = []
+
+      // Resubscribe to dashboard if needed
+      if (this.isDashboardSubscribed) {
+        this.subscribeToDashboard()
+      }
+    })
+
+    this.socket.on('disconnect', () => {
+      this.connectionHandlers.disconnect.forEach(handler => handler())
+      this.isDashboardSubscribed = false
+    })
+
+    this.socket.io.on('reconnect_attempt', (attempt) => {
+      this.connectionHandlers.reconnectAttempt.forEach(handler => handler(attempt))
     })
   }
 
   public onConnectionChange(onConnect: () => void, onDisconnect: () => void) {
-    this.connectionHandlers.connect.add(onConnect)
-    this.connectionHandlers.disconnect.add(onDisconnect)
+    this.connectionHandlers.connect.push(onConnect)
+    this.connectionHandlers.disconnect.push(onDisconnect)
 
     // Initial connection status
     if (this.socket?.connected) {
@@ -191,13 +221,13 @@ export class WebSocketService {
   }
 
   public offConnectionChange(onConnect: () => void, onDisconnect: () => void) {
-    this.connectionHandlers.connect.delete(onConnect)
-    this.connectionHandlers.disconnect.delete(onDisconnect)
+    this.connectionHandlers.connect = this.connectionHandlers.connect.filter(h => h !== onConnect)
+    this.connectionHandlers.disconnect = this.connectionHandlers.disconnect.filter(h => h !== onDisconnect)
   }
 
   public subscribe<T extends WebSocketEvent>(event: T, handler: EventHandler<T>) {
     if (!this.socket?.connected) {
-      console.warn('Attempting to subscribe before WebSocket is connected')
+      this.pendingSubscriptions.push({ event, handler: handler as EventHandler<WebSocketEvent> })
       return
     }
 
@@ -221,16 +251,16 @@ export class WebSocketService {
   }
 
   public subscribeToDashboard() {
+    this.isDashboardSubscribed = true
     if (!this.socket?.connected) {
-      console.warn('Cannot subscribe to dashboard: WebSocket is not connected')
       return
     }
     this.socket?.emit('subscribe:dashboard')
   }
 
   public unsubscribeFromDashboard() {
+    this.isDashboardSubscribed = false
     if (!this.socket?.connected) {
-      console.warn('Cannot unsubscribe from dashboard: WebSocket is not connected')
       return
     }
     this.socket?.emit('unsubscribe:dashboard')
@@ -238,7 +268,6 @@ export class WebSocketService {
 
   public subscribeToPackage(packageId: string) {
     if (!this.socket?.connected) {
-      console.warn('Cannot subscribe to package: WebSocket is not connected')
       return
     }
     this.socket?.emit('subscribe:package', packageId)
@@ -246,7 +275,6 @@ export class WebSocketService {
 
   public unsubscribeFromPackage(packageId: string) {
     if (!this.socket?.connected) {
-      console.warn('Cannot unsubscribe from package: WebSocket is not connected')
       return
     }
     this.socket?.emit('unsubscribe:package', packageId)
@@ -261,8 +289,19 @@ export class WebSocketService {
       this.socket.disconnect()
       this.socket = null
       this.eventHandlers.clear()
-      console.log('WebSocket disconnected and cleaned up')
     }
+  }
+
+  public onReconnectAttempt(handler: ReconnectHandler) {
+    this.connectionHandlers.reconnectAttempt.push(handler)
+  }
+
+  public offReconnectAttempt(handler: ReconnectHandler) {
+    this.connectionHandlers.reconnectAttempt = this.connectionHandlers.reconnectAttempt.filter(h => h !== handler)
+  }
+
+  public isConnected() {
+    return this.socket?.connected || false
   }
 }
 

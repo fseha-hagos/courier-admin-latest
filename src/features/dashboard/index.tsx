@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
   Card,
   CardContent,
@@ -14,11 +15,16 @@ import { DeliveryStatusChart } from './components/delivery-status-chart'
 import { RecentDeliveries } from './components/recent-deliveries'
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from './data/dashboardApi'
-import { Package, Car, Users, CheckCircle2, LucideIcon } from 'lucide-react'
+import { Package, Car, Users, CheckCircle2, LucideIcon, Plus, FileText, UserPlus } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWebSocket } from '@/lib/hooks/use-websocket'
 import { DashboardStatsUpdate, PackageUpdate } from '@/lib/websocket'
 import { useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
+import { Link } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { websocketService } from '@/lib/websocket'
+import { useAuthStore } from '@/stores/authStore'
 
 function StatCard({ title, icon: Icon, value, subtitle, isLoading }: {
   title: string
@@ -54,9 +60,53 @@ export default function Dashboard() {
     queryFn: dashboardApi.getStats
   })
 
+  // Subscribe to dashboard updates when component mounts and connection is ready
+  useEffect(() => {
+    const handleConnect = () => {
+      try {
+        websocketService.subscribeToDashboard()
+      } catch (error) {
+        console.error('Dashboard: Error subscribing to dashboard:', error)
+      }
+    }
+
+    const handleDisconnect = () => {
+      // Optionally show a toast or notification to the user
+    }
+
+    // Check for auth token
+    const { auth } = useAuthStore.getState()
+    if (!auth.accessToken) {
+      console.error('Dashboard: No auth token found, skipping WebSocket setup')
+      return
+    }
+
+    // If already connected, subscribe immediately
+    if (websocketService.isConnected()) {
+      try {
+        websocketService.subscribeToDashboard()
+      } catch (error) {
+        console.error('Dashboard: Error subscribing to dashboard:', error)
+      }
+    }
+
+    // Otherwise, wait for connection
+    websocketService.onConnectionChange(handleConnect, handleDisconnect)
+
+    // Cleanup function
+    return () => {
+      try {
+        websocketService.offConnectionChange(handleConnect, handleDisconnect)
+        websocketService.unsubscribeFromDashboard()
+      } catch (error) {
+        console.error('Dashboard: Error cleaning up subscriptions:', error)
+      }
+    }
+  }, [])
+
   // Subscribe to real-time dashboard updates
   useWebSocket<DashboardStatsUpdate>('dashboard:stats_update', (data) => {
-    queryClient.setQueryData(['dashboard-stats'], (oldData) => {
+    queryClient.setQueryData<DashboardStatsUpdate>(['dashboard-stats'], (oldData: DashboardStatsUpdate | undefined): DashboardStatsUpdate | undefined => {
       if (!oldData) return oldData
       return {
         ...oldData,
@@ -98,8 +148,31 @@ export default function Dashboard() {
       </Header>
 
       <Main className="space-y-6 p-6">
-        <div className='flex items-center'>
-          <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
+          </div>
+          
+          <div className='flex flex-wrap items-center gap-4'>
+            <Button asChild variant="default" size="sm" className="gap-2">
+              <Link to="/packages/create">
+                <Plus className="h-4 w-4" />
+                New Package
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm" className="gap-2">
+              <Link to="/packages">
+                <FileText className="h-4 w-4" />
+                View Packages
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm" className="gap-2">
+              <Link to="/delivery-persons">
+                <UserPlus className="h-4 w-4" />
+                Manage Delivery Persons
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
