@@ -1,216 +1,157 @@
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Overview } from './components/overview'
-import { RecentSales } from './components/recent-sales'
+import { ConnectionStatus } from '@/components/connection-status'
+import { DeliveryStatusChart } from './components/delivery-status-chart'
+import { RecentDeliveries } from './components/recent-deliveries'
+import { useQuery } from '@tanstack/react-query'
+import { dashboardApi } from './data/dashboardApi'
+import { Package, Car, Users, CheckCircle2, LucideIcon } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useWebSocket } from '@/lib/hooks/use-websocket'
+import { DashboardStatsUpdate, PackageUpdate } from '@/lib/websocket'
+import { useQueryClient } from '@tanstack/react-query'
+
+function StatCard({ title, icon: Icon, value, subtitle, isLoading }: {
+  title: string
+  icon: LucideIcon
+  value: string | number
+  subtitle: string
+  isLoading: boolean
+}) {
+  return (
+    <Card className="hover:bg-muted/50 transition-colors">
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+        <CardTitle className='text-sm font-medium'>{title}</CardTitle>
+        <Icon className='h-4 w-4 text-muted-foreground' />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-8 w-24" />
+        ) : (
+          <>
+            <div className='text-2xl font-bold'>{value}</div>
+            <p className='text-xs text-muted-foreground'>{subtitle}</p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function Dashboard() {
+  const queryClient = useQueryClient()
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: dashboardApi.getStats
+  })
+
+  // Subscribe to real-time dashboard updates
+  useWebSocket<DashboardStatsUpdate>('dashboard:stats_update', (data) => {
+    queryClient.setQueryData(['dashboard-stats'], (oldData) => {
+      if (!oldData) return oldData
+      return {
+        ...oldData,
+        totalActiveDeliveries: data.totalActiveDeliveries,
+        totalPackagesToday: data.totalPackagesToday,
+        activeDeliveryPersons: data.activeDeliveryPersons,
+        successRate: data.successRate
+      }
+    })
+  })
+
+  // Listen for package updates that might affect dashboard stats
+  useWebSocket<PackageUpdate>('package:update', () => {
+    // Refetch stats when package status changes
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+  })
+
+  // Listen for package assignments
+  useWebSocket('package:assigned', () => {
+    // Refetch stats when a package is assigned
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+  })
+
+  // Listen for package cancellations
+  useWebSocket('package:cancelled', () => {
+    // Refetch stats when a package is cancelled
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+  })
+
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
-        <TopNav links={topNav} />
         <div className='ml-auto flex items-center space-x-4'>
           <Search />
+          <ConnectionStatus />
           <ThemeSwitch />
           <ProfileDropdown />
         </div>
       </Header>
 
-      {/* ===== Main ===== */}
-      <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
-          <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
-          </div>
+      <Main className="space-y-6 p-6">
+        <div className='flex items-center'>
+          <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
         </div>
-        <Tabs
-          orientation='vertical'
-          defaultValue='overview'
-          className='space-y-4'
-        >
-          <div className='w-full overflow-x-auto pb-2'>
-            <TabsList>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='analytics' disabled>
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value='reports' disabled>
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value='notifications' disabled>
-                Notifications
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value='overview' className='space-y-4'>
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Total Revenue
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>$45,231.89</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +20.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Users
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                    <circle cx='9' cy='7' r='4' />
-                    <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+2350</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +180.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Packages Delivered</CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <rect width='20' height='14' x='2' y='5' rx='2' />
-                    <path d='M2 10h20' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+12,234</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +19% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Active Deliveries
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+573</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +201 since last hour
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
-              <Card className='col-span-1 lg:col-span-4'>
-                <CardHeader>
-                  <CardTitle>Overview</CardTitle>
-                </CardHeader>
-                <CardContent className='pl-2'>
-                  <Overview />
-                </CardContent>
-              </Card>
-              <Card className='col-span-1 lg:col-span-3'>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-6'>
-                  <CardTitle>Recent Deliveries</CardTitle>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
-                  {/* <CardDescription>
-                    You made 265 successful deliveries this month.
-                  </CardDescription> */}
-                </CardHeader>
-                <CardContent>
-                  <RecentSales />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+
+        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+          <StatCard
+            title="Active Deliveries"
+            icon={Package}
+            value={stats?.totalActiveDeliveries || 0}
+            subtitle="Currently in progress"
+            isLoading={isLoading}
+          />
+          <StatCard
+            title="Today's Packages"
+            icon={Car}
+            value={stats?.totalPackagesToday || 0}
+            subtitle="Total packages today"
+            isLoading={isLoading}
+          />
+          <StatCard
+            title="Active Delivery Persons"
+            icon={Users}
+            value={stats?.activeDeliveryPersons || 0}
+            subtitle="Currently on duty"
+            isLoading={isLoading}
+          />
+          <StatCard
+            title="Success Rate"
+            icon={CheckCircle2}
+            value={stats?.successRate ? `${stats.successRate}%` : '0%'}
+            subtitle="Successful deliveries"
+            isLoading={isLoading}
+          />
+        </div>
+
+        <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-7'>
+          <Card className='col-span-1 lg:col-span-4'>
+            <CardHeader>
+              <CardTitle>Delivery Status Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DeliveryStatusChart />
+            </CardContent>
+          </Card>
+          <Card className='col-span-1 lg:col-span-3'>
+            <CardHeader>
+              <CardTitle>Recent Deliveries</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RecentDeliveries />
+            </CardContent>
+          </Card>
+        </div>
       </Main>
     </>
   )
 }
-
-const topNav = [
-  {
-    title: 'Overview',
-    href: 'dashboard/overview',
-    isActive: true,
-    disabled: false,
-  },
-  {
-    title: 'Customers',
-    href: 'dashboard/customers',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Products',
-    href: 'dashboard/products',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Settings',
-    href: 'dashboard/settings',
-    isActive: false,
-    disabled: true,
-  },
-]

@@ -122,7 +122,7 @@ const packagesApi = {
   },
 
   create: async (data: CreatePackageData): Promise<PackageResponse> => {
-    const response = await api.post('/packages/create', data)
+    const response = await api.post('/packages', data)
     return response.data
   },
 
