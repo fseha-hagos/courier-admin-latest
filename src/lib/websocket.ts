@@ -149,9 +149,7 @@ export class WebSocketService {
       return
     }
 
-    const apiUrl = import.meta.env.DEV 
-      ? "http://localhost:3000" 
-      : "https://courier-server-q8dx.onrender.com"
+    const apiUrl = import.meta.env.VITE_API_URL
 
     if (!apiUrl) {
       console.error('WebSocketService: API URL not configured')
