@@ -38,6 +38,7 @@ export const authClient = createAuthClient({
         })
     ],
     fetchOptions: {
+        credentials: 'include', // Enable sending cookies
         onSuccess: (ctx) => {
             if (import.meta.env.DEV) {
                 console.log("Auth success:", ctx)
@@ -68,13 +69,8 @@ export const authClient = createAuthClient({
             if (!token) {
                 return ""
             }
-            try {
-                // Remove quotes if token is stored as JSON string
-                return typeof token === 'string' ? token.replace(/^"|"$/g, '') : token
-            } catch (e) {
-                console.error('Error parsing auth token:', e)
-                return ""
-            }
+            // Return the raw token - Bearer prefix will be added by the client
+            return token
         },
     }
 })

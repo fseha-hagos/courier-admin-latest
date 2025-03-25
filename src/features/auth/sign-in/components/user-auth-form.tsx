@@ -84,7 +84,9 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               const sessionToken = ctx.data.token
               const user = ctx.data.user
               if (sessionToken) {
-                authStore.setAccessToken(sessionToken)
+                // Store the raw token without Bearer prefix
+                const rawToken = sessionToken.startsWith('Bearer ') ? sessionToken.substring(7) : sessionToken
+                authStore.setAccessToken(rawToken)
               }
               if (user) {
                 authStore.setUser(user)

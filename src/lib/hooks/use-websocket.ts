@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from 'react'
 import { websocketService, WebSocketEvent, DashboardStatsUpdate, DeliveryUpdate, TopDeliveryPersonsUpdate, DeliveryLocationUpdate, DeliveryStatusUpdate } from '../websocket'
 

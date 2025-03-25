@@ -4,9 +4,7 @@ import type { PaginationResponse, Package, DeliveryStatus, PackageResponse } fro
 import { useAuthStore } from '@/stores/authStore'
 
 // Get the appropriate API URL based on environment
-const apiUrl = import.meta.env.DEV 
-  ? import.meta.env.VITE_API_URL 
-  : import.meta.env.VITE_PRODUCTION_API_URL
+const apiUrl = import.meta.env.VITE_API_URL
 
 if (!apiUrl) {
   throw new Error('API URL not configured. Please check your environment variables.')

@@ -32,13 +32,13 @@ interface ApiResponse<T> {
 
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
-    const response = await axiosInstance.get<ApiResponse<DashboardStats>>('/dashboard/stats')
+    const response = await axiosInstance.get<ApiResponse<DashboardStats>>('api/dashboard/stats')
     return response.data.stats!
   },
 
   getDeliveryStatusBreakdown: async (timeRange: 'today' | 'week' | 'month' = 'today'): Promise<DeliveryStatusBreakdown[]> => {
     const response = await axiosInstance.get<ApiResponse<DeliveryStatusBreakdown[]>>(
-      `/dashboard/delivery-status?timeRange=${timeRange}`
+      `api/dashboard/delivery-status?timeRange=${timeRange}`
     )
     return response.data.breakdown!
   }

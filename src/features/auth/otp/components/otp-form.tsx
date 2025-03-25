@@ -58,16 +58,18 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
           console.log("ctx-data", ctx.data)
           try {
             const sessionToken = ctx.data.token;
-            // const password = props.password;
-            // const userInfo = ctx.response.headers.get("user-info"); // Optionally get user data
-            // Store the token securely (e.g., in localStorage)
             if (sessionToken) {
-              // Use authStore to manage token and user info
+              // Store the raw token without Bearer prefix
+              const rawToken = sessionToken.startsWith('Bearer ') ? sessionToken.substring(7) : sessionToken
               const authStore = useAuthStore.getState().auth;
-              authStore.setAccessToken(sessionToken);
+              authStore.setAccessToken(rawToken);
             }
-          } catch (error) {
-            alert(JSON.stringify(error));
+          } catch {
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: 'Failed to process authentication token'
+            });
           }
 
           toast({

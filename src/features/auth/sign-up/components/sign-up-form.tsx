@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from '@tanstack/react-router'
+import { parsePhoneNumber } from 'libphonenumber-js'
 import {
   Form,
   FormControl,
@@ -15,9 +16,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-// import { PasswordInput } from '@/components/password-input'
-import { authClient } from "@/lib/auth-client"; //import the auth client
+import { PhoneInput } from '@/components/phone-input'
+import { authClient } from "@/lib/auth-client"
+import { toast } from '@/hooks/use-toast'
 
 type SignUpFormProps = HTMLAttributes<HTMLDivElement>
 
@@ -25,7 +26,15 @@ const formSchema = z
   .object({
     phoneNumber: z
       .string()
-      .min(1, { message: 'Please enter your phone number' }),
+      .min(1, { message: 'Please enter your phone number' })
+      .refine((value) => {
+        try {
+          const phoneNumber = parsePhoneNumber(value, 'ET')
+          return phoneNumber?.isValid() || false
+        } catch {
+          return false
+        }
+      }, "Please enter a valid Ethiopian phone number"),
   })
 
 export function SignUpForm({ className, ...props }: SignUpFormProps) {
@@ -39,31 +48,47 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
   })
 
   async function onSubmit(formData: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    // console.log(formData)
+    try {
+      setIsLoading(true)
+      const phoneNumber = parsePhoneNumber(formData.phoneNumber, 'ET')
+      if (!phoneNumber?.isValid()) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid phone number',
+          description: 'Please enter a valid Ethiopian phone number',
+        })
+        return
+      }
 
-    await authClient.phoneNumber.sendOtp({
-      phoneNumber: formData.phoneNumber
-    },
-      {
-        onRequest: () => {
-          //show loading
-          setIsLoading(true)
-        },
-        onSuccess: (ctx) => {
-          //redirect to the dashboard
-          setIsLoading(false)
-
-          navigate({ to: `/otp?phone=${formData.phoneNumber}` })
-          console.log("SIGNUP: ctx-data", ctx.data)
-        },
-        onError: (ctx) => {
-          setIsLoading(false)
-          alert(ctx.error.message);
-        },
+      const e164PhoneNumber = phoneNumber.format('E.164')
+      await authClient.phoneNumber.sendOtp({
+        phoneNumber: e164PhoneNumber
+      },
+        {
+          onRequest: () => {
+            setIsLoading(true)
+          },
+          onSuccess: () => {
+            setIsLoading(false)
+            navigate({ to: `/otp?phone=${e164PhoneNumber}` })
+          },
+          onError: (ctx) => {
+            setIsLoading(false)
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: ctx.error.message || 'Failed to send OTP. Please try again.',
+            })
+          },
+        })
+    } catch {
+      setIsLoading(false)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to process phone number. Please try again.',
       })
-
-
+    }
   }
 
   return (
@@ -71,24 +96,37 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className='grid gap-2'>
-
             <FormField
               control={form.control}
               name='phoneNumber'
-              render={({ field }) => (
+              render={({ field: { onChange, ...field } }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel> Phone number </FormLabel>
+                  <FormLabel>Phone number</FormLabel>
                   <FormControl>
-                    <Input placeholder='911121314' {...field} />
+                    <PhoneInput 
+                      {...field}
+                      defaultCountry="ET"
+                      placeholder="+251 9X XXX XXXX"
+                      onChange={(value: string, isValid: boolean) => {
+                        onChange(value)
+                        if (!isValid) {
+                          form.setError('phoneNumber', {
+                            type: 'manual',
+                            message: 'Please enter a valid Ethiopian phone number'
+                          })
+                        } else {
+                          form.clearErrors('phoneNumber')
+                        }
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button className='mt-2 ' disabled={isLoading} type='submit'>
+            <Button className='mt-2' disabled={isLoading} type='submit'>
               Create Account 
               <IconChevronRight />
-              
             </Button>
           </div>
         </form>

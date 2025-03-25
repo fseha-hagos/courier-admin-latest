@@ -16,12 +16,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
-// import { useAuthStore } from '@/stores/authStore'
-// import { authClient } from '@/lib/auth-client'
-import axios from 'axios'
 import { useAuth } from '@/stores/authStore'
 import { toast } from '@/hooks/use-toast'
 import { IconCircleCheck } from '@tabler/icons-react'
+import { axiosInstance } from '@/lib/axios'
 
 type CompleteProfileFormProps = HTMLAttributes<HTMLDivElement>
 
@@ -60,21 +58,19 @@ export function CompleteProfileForm({ className, ...props }: CompleteProfileForm
   })
 
   const setPassword = async (sessionToken: string, newPassword: string, newName: string) => {
-    // console.log('sessionToken:', sessionToken);
-    console.log('password:', newPassword);
     setIsLoading(true)
 
     try {
-      const { data } = await axios.post(
-        'api/set-password',
-        { newPassword, newName }, // Request body
+      const { data } = await axiosInstance.post(
+        '/api/set-password',
+        { newPassword, newName },
         {
           headers: {
-            Authorization: `Bearer ${sessionToken}`, // Attach the session token
+            Authorization: `Bearer ${sessionToken}`,
           },
-        },
-
-      );
+        }
+      )
+      
       if (data.success) {
         toast({
           title: 'Congratulations!',
@@ -85,35 +81,25 @@ export function CompleteProfileForm({ className, ...props }: CompleteProfileForm
           ),
         })
         setIsLoading(false)
-
         navigate({ to: '/' })
       }
-
-      console.log(data.message); // Password set successfully
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error!',
         description: (
           <span>
-            An error occured and your profile couldn't be saved.
+            An error occurred and your profile couldn't be saved.
           </span>
         ),
       })
       setIsLoading(false)
-
-      console.error('Error:', error);
     }
-
-  };
+  }
 
   async function onSubmit(formData: z.infer<typeof formSchema>) {
-    // console.log(formData)
     const { password, name } = formData
     const token = auth.accessToken
-    console.log('password:', password);
     await setPassword(token, password, name)
-
-
   }
 
   return (
@@ -121,13 +107,12 @@ export function CompleteProfileForm({ className, ...props }: CompleteProfileForm
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className='grid gap-2'>
-
             <FormField
               control={form.control}
               name='name'
               render={({ field }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel> Name </FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder='Enter your name' {...field} />
                   </FormControl>
@@ -166,7 +151,6 @@ export function CompleteProfileForm({ className, ...props }: CompleteProfileForm
               <IconCircleCheck color={"green"} />
             </Button>
           </div>
-
         </form>
       </Form>
     </div>
