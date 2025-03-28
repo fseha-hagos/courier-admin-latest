@@ -1,5 +1,7 @@
+/* eslint-disable no-console */
 import Cookies from 'js-cookie'
 import { create } from 'zustand'
+import { websocketService } from '@/lib/websocket'
 
 // Cookie names for storing auth state
 const ACCESS_TOKEN = 'auth_token'
@@ -25,12 +27,33 @@ interface AuthState {
   }
 }
 
+// Helper function to clean token
+function cleanToken(token: string): string {
+  try {
+    // If token is stored as JSON string, parse it
+    if (token.startsWith('"') || token.startsWith('{')) {
+      token = JSON.parse(token)
+    }
+    // Remove Bearer prefix if present
+    if (token.startsWith('Bearer ')) {
+      token = token.substring(7)
+    }
+    return token
+  } catch (e) {
+    console.error('Error cleaning token:', e)
+    return token
+  }
+}
+
 export const useAuthStore = create<AuthState>()((set) => {
   // Initialize state from cookies
   const cookieState = Cookies.get(ACCESS_TOKEN)
   const userCookieState = Cookies.get(USER_COOKIE)
-  const initToken = cookieState ? JSON.parse(cookieState) : ''
+  const initToken = cookieState ? cleanToken(cookieState) : ''
   const initUser = userCookieState ? JSON.parse(userCookieState) : null
+
+  // Set initial token in WebSocket service
+  websocketService.setAuthToken(initToken || null)
 
   return {
     auth: {
@@ -47,22 +70,27 @@ export const useAuthStore = create<AuthState>()((set) => {
       accessToken: initToken,
       setAccessToken: (accessToken) =>
         set((state) => {
-          if (accessToken) {
-            Cookies.set(ACCESS_TOKEN, JSON.stringify(accessToken))
+          const cleanedToken = cleanToken(accessToken)
+          if (cleanedToken) {
+            Cookies.set(ACCESS_TOKEN, cleanedToken)
+            websocketService.setAuthToken(cleanedToken)
           } else {
             Cookies.remove(ACCESS_TOKEN)
+            websocketService.setAuthToken(null)
           }
-          return { ...state, auth: { ...state.auth, accessToken } }
+          return { ...state, auth: { ...state.auth, accessToken: cleanedToken } }
         }),
       resetAccessToken: () =>
         set((state) => {
           Cookies.remove(ACCESS_TOKEN)
+          websocketService.setAuthToken(null)
           return { ...state, auth: { ...state.auth, accessToken: '' } }
         }),
       reset: () =>
         set((state) => {
           Cookies.remove(ACCESS_TOKEN)
           Cookies.remove(USER_COOKIE)
+          websocketService.setAuthToken(null)
           return {
             ...state,
             auth: { ...state.auth, user: null, accessToken: '' },

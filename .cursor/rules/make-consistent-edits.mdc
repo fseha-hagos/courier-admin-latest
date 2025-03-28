@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Always make sure your edits and enhancements are inline with the established patterns. 
+Examples: 
+ - check if there is existing routing solution like tanstack router implemented in the project before installing a new tool like react router dom.
+

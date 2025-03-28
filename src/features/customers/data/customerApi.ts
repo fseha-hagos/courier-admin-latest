@@ -12,11 +12,11 @@ if (!apiUrl) {
 // Log which API URL is being used in development
 if (import.meta.env.DEV) {
   // eslint-disable-next-line no-console
-  console.log(`🌐 Using API URL: ${apiUrl}`)
+  console.log(`🌐 Using API URL: ${apiUrl}/api`)
 }
 
 const api = axios.create({
-  baseURL: apiUrl,
+  baseURL: `${apiUrl}/api`,
   withCredentials: true,
 })
 

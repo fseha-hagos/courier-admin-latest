@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { authClient } from './auth-client'
@@ -12,8 +13,8 @@ export async function logout(router: any) {
     fetchOptions: {
       onSuccess: () => {
         useAuthStore.getState().auth.reset()
-        const redirect = `${window.location.href}` // Get current URL for redirection
-        router.navigate(`/sign-in?redirect=${encodeURIComponent(redirect)}`)
+        const redirect = `${window.location.href}`
+        router.navigate({ to: '/sign-in', search: { redirect } })
       },
     },
   })

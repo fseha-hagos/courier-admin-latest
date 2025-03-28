@@ -2,7 +2,6 @@
 import { io, Socket } from 'socket.io-client'
 import { DeliveryStatus } from '@/features/packages/types'
 import { DeliveryPerson } from '@/features/delivery-persons/types'
-import { useAuthStore } from '@/stores/authStore'
 
 // Event types
 export type WebSocketEvent = 
@@ -139,71 +138,126 @@ export class WebSocketService {
     reconnectAttempt: []
   }
   private isDashboardSubscribed: boolean = false
+  private connectionAttempts: number = 0
+  private maxConnectionAttempts: number = 5
+  private reconnectionDelay: number = 1000
+  private currentToken: string | null = null
 
   constructor() {
-    this.connect()
+    // Don't connect immediately, wait for token to be set
   }
 
-  private connect() {
+  public setAuthToken(token: string | null) {
+    this.currentToken = token
+    if (token) {
+      this.tryConnect()
+    } else {
+      this.disconnect()
+    }
+  }
+
+  private async tryConnect() {
     if (this.socket) {
       return
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL
+    // Get the appropriate API URL based on environment
+    const apiUrl = import.meta.env.DEV 
+      ? import.meta.env.VITE_API_URL 
+      : import.meta.env.VITE_PRODUCTION_API_URL
 
     if (!apiUrl) {
       console.error('WebSocketService: API URL not configured')
       return
     }
 
-    const { auth } = useAuthStore.getState()
-    if (!auth.accessToken) {
-      console.error('WebSocketService: No auth token found')
+    if (!this.currentToken) {
+      console.warn('WebSocketService: No auth token found, will retry in 1s')
+      if (this.connectionAttempts < this.maxConnectionAttempts) {
+        this.connectionAttempts++
+        setTimeout(() => this.tryConnect(), this.reconnectionDelay)
+      }
       return
     }
 
-    this.socket = io(apiUrl, {
-      transports: ['websocket'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      auth: { token: auth.accessToken }
-    })
+    try {
+      // Reset connection attempts since we have a token
+      this.connectionAttempts = 0
 
-    this.socket.on('connect_error', (error) => {
-      console.error('WebSocketService: Connection error:', error.message)
-      this.connectionHandlers.disconnect.forEach(handler => handler())
-    })
-
-    this.socket.on('error', (error) => {
-      console.error('WebSocketService: Socket error:', error)
-      this.connectionHandlers.disconnect.forEach(handler => handler())
-    })
-
-    this.socket.on('connect', () => {
-      this.connectionHandlers.connect.forEach(handler => handler())
-      
-      // Process pending subscriptions
-      this.pendingSubscriptions.forEach(({ event, handler }) => {
-        this.subscribe(event, handler)
-      })
-      this.pendingSubscriptions = []
-
-      // Resubscribe to dashboard if needed
-      if (this.isDashboardSubscribed) {
-        this.subscribeToDashboard()
+      // Try to parse token if it's stored as JSON string
+      let token = this.currentToken
+      try {
+        if (typeof token === 'string' && (token.startsWith('"') || token.startsWith('{'))) {
+          token = JSON.parse(token)
+        }
+      } catch (e) {
+        console.warn('WebSocketService: Error parsing token, using as is:', e)
       }
-    })
 
-    this.socket.on('disconnect', () => {
-      this.connectionHandlers.disconnect.forEach(handler => handler())
-      this.isDashboardSubscribed = false
-    })
+      // Remove Bearer prefix if present
+      if (token.startsWith('Bearer ')) {
+        token = token.substring(7)
+      }
 
-    this.socket.io.on('reconnect_attempt', (attempt) => {
-      this.connectionHandlers.reconnectAttempt.forEach(handler => handler(attempt))
-    })
+      this.socket = io(apiUrl, {
+        transports: ['websocket'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        auth: { 
+          token,
+          type: 'Bearer'
+        },
+        withCredentials: true
+      })
+
+      this.socket.on('connect_error', (error) => {
+        console.error('WebSocketService: Connection error:', error.message)
+        this.connectionHandlers.disconnect.forEach(handler => handler())
+        
+        // If the error is auth-related, try to reconnect with fresh token
+        if (error.message.includes('auth') || error.message.includes('unauthorized')) {
+          setTimeout(() => this.tryConnect(), this.reconnectionDelay)
+        }
+      })
+
+      this.socket.on('error', (error) => {
+        console.error('WebSocketService: Socket error:', error)
+        this.connectionHandlers.disconnect.forEach(handler => handler())
+      })
+
+      this.socket.on('connect', () => {
+        console.log('WebSocketService: Connected successfully')
+        this.connectionHandlers.connect.forEach(handler => handler())
+        
+        // Process pending subscriptions
+        this.pendingSubscriptions.forEach(({ event, handler }) => {
+          this.subscribe(event, handler)
+        })
+        this.pendingSubscriptions = []
+
+        // Resubscribe to dashboard if needed
+        if (this.isDashboardSubscribed) {
+          this.subscribeToDashboard()
+        }
+      })
+
+      this.socket.on('disconnect', () => {
+        console.log('WebSocketService: Disconnected')
+        this.connectionHandlers.disconnect.forEach(handler => handler())
+        this.isDashboardSubscribed = false
+      })
+
+      this.socket.io.on('reconnect_attempt', (attempt) => {
+        console.log('WebSocketService: Reconnection attempt', attempt)
+        this.connectionHandlers.reconnectAttempt.forEach(handler => handler(attempt))
+      })
+    } catch (error) {
+      console.error('WebSocketService: Error setting up socket:', error)
+      // Try to reconnect after delay
+      setTimeout(() => this.tryConnect(), this.reconnectionDelay)
+    }
   }
 
   public onConnectionChange(onConnect: () => void, onDisconnect: () => void) {
@@ -300,6 +354,12 @@ export class WebSocketService {
 
   public isConnected() {
     return this.socket?.connected || false
+  }
+
+  // Method to force a reconnection attempt
+  public reconnect() {
+    this.disconnect()
+    this.tryConnect()
   }
 }
 

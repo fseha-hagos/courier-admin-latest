@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# When i request an edit or new feature, Always check for existing implementation.
+Examples: 
+- instead of initializing something twice, check if we already have existing implementation first
+- instead of installing sonner or any other tool, check if we have implemented toasts in another way already
+
