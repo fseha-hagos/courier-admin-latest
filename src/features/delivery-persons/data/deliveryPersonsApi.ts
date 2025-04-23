@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import axios from 'axios'
 import type { DeliveryPersonsResponse, DeliveryPersonResponse, DeliveryPersonStatus } from '../types'
 import type { CreateDeliveryPersonForm } from '../types/create-form'
@@ -80,7 +81,9 @@ const deliveryPersonsApi = {
         maxWeight: data.vehicle.maxWeight
       }
     }
+    console.log('🚀 ~ deliveryPersonsApi ~ payload:', payload)
     const response = await api.post('/admin/delivery-persons', payload)
+    console.log('🚀 ~ deliveryPersonsApi ~ response:', response.data)
     return response.data
   },
 
