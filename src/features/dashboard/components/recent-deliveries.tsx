@@ -8,12 +8,15 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 export function RecentDeliveries() {
   const queryClient = useQueryClient()
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: dashboardApi.getStats
+    queryFn: dashboardApi.getStats,
+    retry: 2
   })
 
   // Subscribe to real-time delivery updates
@@ -46,10 +49,32 @@ export function RecentDeliveries() {
     )
   }
 
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load recent deliveries. Please try again later.
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (!stats?.recentDeliveries || stats.recentDeliveries.length === 0) {
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No recent deliveries found.
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
     <ScrollArea className="h-[400px]">
       <div className="space-y-4">
-        {stats?.recentDeliveries.map((delivery: RecentDelivery) => (
+        {stats.recentDeliveries.map((delivery: RecentDelivery) => (
           <div key={delivery.id} className="flex items-center space-x-4">
             <Avatar>
               <AvatarFallback>

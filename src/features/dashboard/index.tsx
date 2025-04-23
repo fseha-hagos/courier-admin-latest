@@ -25,6 +25,7 @@ import { Link } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { websocketService } from '@/lib/websocket'
 import { useAuthStore } from '@/stores/authStore'
+import { DashboardErrorBoundary } from './components/dashboard-error-boundary'
 
 function StatCard({ title, icon: Icon, value, subtitle, isLoading }: {
   title: string
@@ -57,7 +58,8 @@ export default function Dashboard() {
   const queryClient = useQueryClient()
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: dashboardApi.getStats
+    queryFn: dashboardApi.getStats,
+    retry: 2
   })
 
   // Subscribe to dashboard updates when component mounts and connection is ready
@@ -175,36 +177,38 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
-          <StatCard
-            title="Active Deliveries"
-            icon={Package}
-            value={stats?.totalActiveDeliveries || 0}
-            subtitle="Currently in progress"
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="Today's Packages"
-            icon={Car}
-            value={stats?.totalPackagesToday || 0}
-            subtitle="Total packages today"
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="Active Delivery Persons"
-            icon={Users}
-            value={stats?.activeDeliveryPersons || 0}
-            subtitle="Currently on duty"
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="Success Rate"
-            icon={CheckCircle2}
-            value={stats?.successRate ? `${stats.successRate}%` : '0%'}
-            subtitle="Successful deliveries"
-            isLoading={isLoading}
-          />
-        </div>
+        <DashboardErrorBoundary title="Statistics">
+          <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+            <StatCard
+              title="Active Deliveries"
+              icon={Package}
+              value={stats?.totalActiveDeliveries || 0}
+              subtitle="Currently in progress"
+              isLoading={isLoading}
+            />
+            <StatCard
+              title="Today's Packages"
+              icon={Car}
+              value={stats?.totalPackagesToday || 0}
+              subtitle="Total packages today"
+              isLoading={isLoading}
+            />
+            <StatCard
+              title="Active Delivery Persons"
+              icon={Users}
+              value={stats?.activeDeliveryPersons || 0}
+              subtitle="Currently on duty"
+              isLoading={isLoading}
+            />
+            <StatCard
+              title="Success Rate"
+              icon={CheckCircle2}
+              value={stats?.successRate ? `${stats.successRate}%` : '0%'}
+              subtitle="Successful deliveries"
+              isLoading={isLoading}
+            />
+          </div>
+        </DashboardErrorBoundary>
 
         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-7'>
           <Card className='col-span-1 lg:col-span-4'>
@@ -212,7 +216,9 @@ export default function Dashboard() {
               <CardTitle>Delivery Status Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <DeliveryStatusChart />
+              <DashboardErrorBoundary title="Delivery Status Chart" minimal>
+                <DeliveryStatusChart />
+              </DashboardErrorBoundary>
             </CardContent>
           </Card>
           <Card className='col-span-1 lg:col-span-3'>
@@ -220,7 +226,9 @@ export default function Dashboard() {
               <CardTitle>Recent Deliveries</CardTitle>
             </CardHeader>
             <CardContent>
-              <RecentDeliveries />
+              <DashboardErrorBoundary title="Recent Deliveries" minimal>
+                <RecentDeliveries />
+              </DashboardErrorBoundary>
             </CardContent>
           </Card>
         </div>

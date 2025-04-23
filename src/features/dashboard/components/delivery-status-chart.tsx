@@ -1,144 +1,208 @@
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts'
-import { useQuery } from '@tanstack/react-query'
-import { dashboardApi } from '../data/dashboardApi'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useState } from 'react'
-import { DeliveryStatus } from '@/features/packages/types'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useWebSocket } from '@/lib/hooks/use-websocket'
-import { DeliveryUpdate } from '@/lib/websocket'
-import { useQueryClient } from '@tanstack/react-query'
-import { cn } from '@/lib/utils'
+import { websocketService } from '@/lib/websocket'
+import { dashboardApi } from '@/features/dashboard/data/dashboardApi'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AlertCircle, Clock, Package } from 'lucide-react'
+import { DeliveryStatus } from '@/features/packages/types'
+import { useState } from 'react'
+import {
+  Card,
+  Title,
+  DonutChart,
+  Legend,
+  List,
+  ListItem,
+  BadgeDelta,
+  DeltaType,
+  Flex,
+  Text
+} from '@tremor/react'
 
-const statusColors: Record<DeliveryStatus, string> = {
-  [DeliveryStatus.ASSIGNED]: '#60a5fa',
-  [DeliveryStatus.IN_PROGRESS]: '#fbbf24',
-  [DeliveryStatus.COMPLETED]: '#34d399',
-  [DeliveryStatus.FAILED]: '#f87171',
-  [DeliveryStatus.DECLINED]: '#9ca3af'
-}
-
-const statusLabels: Record<DeliveryStatus, string> = {
-  [DeliveryStatus.ASSIGNED]: 'Assigned',
-  [DeliveryStatus.IN_PROGRESS]: 'In Progress',
-  [DeliveryStatus.COMPLETED]: 'Completed',
-  [DeliveryStatus.FAILED]: 'Failed',
-  [DeliveryStatus.DECLINED]: 'Declined'
-}
-
-type ChartData = {
+interface DeliveryStatusData {
   status: DeliveryStatus
-  count: number
-  color: string
+  value: number
+  label: string
+  description: string
+  deltaType: DeltaType
+  delta: number
+}
+
+const STATUS_CONFIG: Record<DeliveryStatus, { color: string; description: string }> = {
+  [DeliveryStatus.ASSIGNED]: {
+    color: 'blue',
+    description: 'Packages assigned to delivery persons'
+  },
+  [DeliveryStatus.IN_PROGRESS]: {
+    color: 'amber',
+    description: 'Packages currently being delivered'
+  },
+  [DeliveryStatus.COMPLETED]: {
+    color: 'emerald',
+    description: 'Successfully delivered packages'
+  },
+  [DeliveryStatus.FAILED]: {
+    color: 'rose',
+    description: 'Failed delivery attempts'
+  },
+  [DeliveryStatus.DECLINED]: {
+    color: 'gray',
+    description: 'Delivery requests declined'
+  }
+}
+
+function getDeltaType(trend: number): DeltaType {
+  if (trend > 0) return "increase"
+  if (trend < 0) return "decrease"
+  return "unchanged"
 }
 
 export function DeliveryStatusChart() {
   const queryClient = useQueryClient()
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today')
-  const { data, isLoading } = useQuery<ChartData[]>({
-    queryKey: ['delivery-status', timeRange],
+  
+  const { data, isLoading, error } = useQuery<DeliveryStatusData[]>({
+    queryKey: ['dashboard-delivery-status', timeRange],
     queryFn: async () => {
-      const rawData = await dashboardApi.getDeliveryStatusBreakdown(timeRange)
-      return rawData.map(item => ({
-        ...item,
-        color: statusColors[item.status]
+      const response = await dashboardApi.getDeliveryStatusBreakdown(timeRange)
+      return response.map(item => ({
+        status: item.status,
+        value: item.count,
+        label: item.status.toLowerCase().replace('_', ' '),
+        description: STATUS_CONFIG[item.status].description,
+        deltaType: getDeltaType(item.trend || 0),
+        delta: Math.abs(item.trend || 0)
       }))
-    }
+    },
+    retry: 2,
+    staleTime: websocketService.isConnected() ? 1000 * 60 : 1000 * 60 * 5,
   })
 
-  // Subscribe to real-time delivery updates
-  useWebSocket<DeliveryUpdate>('dashboard:delivery_update', () => {
-    // Refetch the data when a delivery status changes
-    queryClient.invalidateQueries({ queryKey: ['delivery-status', timeRange] })
-  }, [timeRange])
+  // Subscribe to dashboard updates
+  useWebSocket('dashboard:delivery_update', () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-delivery-status', timeRange] })
+  })
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <Skeleton className="h-10 w-[180px]" />
+      <Card className="h-[400px]">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 w-1/4 bg-muted rounded" />
+          <div className="h-[300px] bg-muted rounded" />
         </div>
-        <div className="h-[350px] flex items-center justify-center">
-          <Skeleton className="h-[350px] w-full" />
-        </div>
-      </div>
+      </Card>
     )
   }
 
+  if (error) {
+    return (
+      <Card className="h-[400px]">
+        <div className="flex flex-col items-center justify-center h-full space-y-2 text-center">
+          <AlertCircle className="h-6 w-6 text-destructive" />
+          <Title>Failed to load delivery status</Title>
+          <Text className="text-muted-foreground">
+            {error instanceof Error ? error.message : 'Please try again later'}
+          </Text>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['dashboard-delivery-status', timeRange] })}
+          >
+            Retry
+          </Button>
+        </div>
+      </Card>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Card className="h-[400px]">
+        <div className="flex flex-col items-center justify-center h-full space-y-2 text-center">
+          <Package className="h-6 w-6 text-muted-foreground" />
+          <Title>No delivery data</Title>
+          <Text className="text-muted-foreground">
+            Start creating delivery requests to see statistics
+          </Text>
+        </div>
+      </Card>
+    )
+  }
+
+  const totalDeliveries = data.reduce((sum, item) => sum + item.value, 0)
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
-        <Select value={timeRange} onValueChange={(value: 'today' | 'week' | 'month') => setTimeRange(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select time range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">This Month</SelectItem>
-          </SelectContent>
-        </Select>
+    <Card>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <Title>Delivery Status Overview</Title>
+          <Text className="mt-2">Total deliveries: {totalDeliveries}</Text>
+        </div>
+        <div className="flex items-center gap-3">
+          {!websocketService.isConnected() && (
+            <Badge variant="outline" className="gap-1">
+              <Clock className="h-3 w-3" />
+              <span className="text-xs">Offline Mode</span>
+            </Badge>
+          )}
+          <Select value={timeRange} onValueChange={(value: 'today' | 'week' | 'month') => setTimeRange(value)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="rounded-lg border p-4">
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis
-              dataKey="status"
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value: DeliveryStatus) => statusLabels[value] || value}
-              interval={0}
-            />
-            <YAxis
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}`}
-            />
-            <Tooltip
-              cursor={{ fill: 'hsl(var(--muted)/0.1)' }}
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null
-                const data = payload[0].payload as ChartData
-                return (
-                  <div className="rounded-lg border bg-background p-2 shadow-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center gap-1">
-                        <div 
-                          className="h-2 w-2 rounded-full" 
-                          style={{ backgroundColor: data.color }}
-                        />
-                        <span className="text-sm font-medium">
-                          {statusLabels[data.status]}
-                        </span>
-                      </div>
-                      <div className="text-sm text-right font-medium">
-                        {payload[0].value} deliveries
-                      </div>
-                    </div>
-                  </div>
-                )
-              }}
-            />
-            <Bar
-              dataKey="count"
-              radius={[4, 4, 0, 0]}
-              className={cn(
-                "[&_.recharts-bar-rectangle]:stroke-none",
-                "cursor-pointer transition-opacity hover:opacity-80"
-              )}
-            >
-              {data?.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3">
+          <DonutChart
+            data={data}
+            category="value"
+            index="label"
+            valueFormatter={(number: number) => `${((number / totalDeliveries) * 100).toFixed(1)}%`}
+            colors={data.map(item => STATUS_CONFIG[item.status].color)}
+            className="h-80"
+          />
+          <Legend
+            categories={data.map(item => item.label)}
+            colors={data.map(item => STATUS_CONFIG[item.status].color)}
+            className="mt-6"
+          />
+        </div>
+        
+        <div className="lg:col-span-2">
+          <List>
+            {data.map((item) => (
+              <ListItem key={item.status}>
+                <div>
+                  <Text className="capitalize">{item.label}</Text>
+                  <Text className="text-muted-foreground text-sm">{item.description}</Text>
+                </div>
+                <div>
+                  <Flex justifyContent="end" className="space-x-4">
+                    <Text className="tabular-nums">{item.value}</Text>
+                    {item.delta > 0 && (
+                      <BadgeDelta deltaType={item.deltaType} size="sm">
+                        {item.delta}%
+                      </BadgeDelta>
+                    )}
+                  </Flex>
+                  <Text className="text-right text-muted-foreground text-sm">
+                    {((item.value / totalDeliveries) * 100).toFixed(1)}%
+                  </Text>
+                </div>
+              </ListItem>
+            ))}
+          </List>
+        </div>
       </div>
-    </div>
+    </Card>
   )
 } 

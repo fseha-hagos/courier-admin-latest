@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { format, formatDistanceToNow } from 'date-fns'
+import { toast } from '@/hooks/use-toast'
 
 export function ConnectionStatus() {
   const [isConnected, setIsConnected] = useState(false)
@@ -23,6 +24,15 @@ export function ConnectionStatus() {
         { timestamp, type: 'connect' },
         ...prev.slice(0, 4) // Keep last 5 events
       ])
+      
+      // Show reconnected toast
+      if (reconnectAttempts > 0) {
+        toast({
+          title: 'Connection Restored',
+          description: 'You are back online. Real-time updates resumed.',
+          variant: 'default',
+        })
+      }
     }
 
     const handleDisconnect = () => {
@@ -32,20 +42,39 @@ export function ConnectionStatus() {
         { timestamp, type: 'disconnect' },
         ...prev.slice(0, 4) // Keep last 5 events
       ])
+
+      // Show disconnected toast
+      toast({
+        title: 'Connection Lost',
+        description: 'You are offline. Attempting to reconnect...',
+        variant: 'destructive',
+      })
     }
 
     const handleReconnectAttempt = (attempt: number) => {
       setReconnectAttempts(attempt)
+      
+      // Show reconnection attempt toast every 3 attempts
+      if (attempt > 0 && attempt % 3 === 0) {
+        toast({
+          title: 'Still Trying to Reconnect',
+          description: `Attempt ${attempt}. Please check your connection.`,
+          variant: 'destructive',
+        })
+      }
     }
 
     websocketService.onConnectionChange(handleConnect, handleDisconnect)
     websocketService.onReconnectAttempt(handleReconnectAttempt)
 
+    // Initial connection status
+    setIsConnected(websocketService.isConnected())
+
     return () => {
       websocketService.offConnectionChange(handleConnect, handleDisconnect)
       websocketService.offReconnectAttempt(handleReconnectAttempt)
     }
-  }, [])
+  }, [reconnectAttempts])
 
   return (
     <Popover>
@@ -58,6 +87,7 @@ export function ConnectionStatus() {
               ? "text-green-500 bg-green-50 dark:bg-green-950/50" 
               : "text-destructive bg-destructive/10 dark:bg-destructive/20 animate-pulse"
           )}
+          aria-label={isConnected ? "Connected to server" : "Disconnected from server"}
         >
           {isConnected ? (
             <>
@@ -67,11 +97,17 @@ export function ConnectionStatus() {
           ) : (
             <>
               <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Disconnected</span>
+              <span className="hidden sm:inline">Offline</span>
+              {reconnectAttempts > 0 && (
+                <span className="text-[10px] opacity-75">
+                  (Attempt {reconnectAttempts})
+                </span>
+              )}
             </>
           )}
         </button>
       </PopoverTrigger>
+      
       <PopoverContent className="w-80">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -83,7 +119,7 @@ export function ConnectionStatus() {
                 isConnected ? "bg-green-500" : undefined
               )}
             >
-              {isConnected ? "Connected" : "Disconnected"}
+              {isConnected ? "Connected" : "Offline"}
             </Badge>
           </div>
           <Separator />
@@ -130,10 +166,16 @@ export function ConnectionStatus() {
                   </div>
                 )}
                 <div className="mt-2 rounded-md bg-destructive/10 dark:bg-destructive/20 p-2 text-destructive dark:text-destructive">
-                  <p className="text-xs">Connection lost. Attempting to reconnect...</p>
+                  <p className="text-xs">Connection lost. Attempting to reconnect automatically...</p>
+                  {reconnectAttempts >= 5 && (
+                    <p className="mt-1 text-xs">
+                      Having trouble connecting? Try refreshing the page or checking your internet connection.
+                    </p>
+                  )}
                 </div>
               </>
             )}
+            
             {connectionHistory.length > 0 && (
               <>
                 <Separator />
